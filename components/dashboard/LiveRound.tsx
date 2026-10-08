@@ -7,15 +7,18 @@ import { StatusPill } from "@/components/ui/StatusPill";
 import { Countdown } from "@/components/ui/Countdown";
 import { PredictionCard } from "./PredictionCard";
 import { StakePanel } from "./StakePanel";
-import { getMarkets } from "@/data/markets";
+import { useMarkets } from "@/providers/markets-provider";
+import { useRoundNumber } from "@/hooks/use-round-number";
 import { defaultCalls, getCurrentRound } from "@/data/rounds";
 import { formatEth, formatRoundId } from "@/lib/format";
+import { contractsLive } from "@/lib/web3/contracts";
 
 type Calls = Record<string, { yes: number; stakeEth: number }>;
 
 export function LiveRound() {
   const round = getCurrentRound();
-  const markets = getMarkets();
+  const { markets, status: priceStatus } = useMarkets();
+  const roundNo = useRoundNumber();
   const [calls, setCalls] = useState<Calls>(() => ({ ...defaultCalls }));
   const [selectedId, setSelectedId] = useState(markets[0].id);
   const [adjusting, setAdjusting] = useState<string | null>(null);
@@ -25,8 +28,10 @@ export function LiveRound() {
     setCalls((c) => ({ ...c, [id]: { ...c[id], ...patch } }));
   }, []);
 
-  const totalPool = round.markets.reduce((s, m) => s + m.poolEth, 0);
-  const totalEntries = round.markets.reduce((s, m) => s + m.entries, 0);
+  const pools = round.markets.map((m) => m.poolEth).filter((v): v is number => v !== null);
+  const entries = round.markets.map((m) => m.entries).filter((v): v is number => v !== null);
+  const totalPool = pools.length ? `${formatEth(pools.reduce((a, b) => a + b, 0), 2)} ETH` : "At launch";
+  const totalEntries = entries.length ? entries.reduce((a, b) => a + b, 0).toLocaleString("en-US") : "At launch";
   const selectedRound = round.markets.find((m) => m.marketId === selectedId)!;
 
   const focusPanel = (id: string) => {
@@ -45,7 +50,12 @@ export function LiveRound() {
           eyebrow="Live round"
           title="Your next call."
           body="Set your probabilities. Choose your stake. Let the market decide."
-          aside={<StatusPill status={round.source} label="Demo round data" />}
+          aside={
+            <div className="flex flex-wrap gap-2">
+              <StatusPill status={priceStatus === "live" ? "api" : "pending"} label={priceStatus === "live" ? "Live prices" : "Connecting prices"} />
+              {!contractsLive && <StatusPill status="prelaunch" label="Staking opens at launch" />}
+            </div>
+          }
         />
 
         {/* round bar */}
@@ -55,9 +65,9 @@ export function LiveRound() {
               <Countdown size="md" showProgress />
             </div>
             {[
-              ["Round", formatRoundId(round.id)],
-              ["Total pool", `${formatEth(totalPool, 2)} ETH`],
-              ["Entries", totalEntries.toLocaleString("en-US")],
+              ["Round", roundNo === null ? "#—" : formatRoundId(roundNo)],
+              ["Total pool", totalPool],
+              ["Entries", totalEntries],
             ].map(([k, v]) => (
               <div key={k} className="flex flex-col justify-center bg-panel px-5 py-4 last:col-span-2 md:last:col-span-1">
                 <span className="label">{k}</span>

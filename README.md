@@ -31,26 +31,40 @@ components/
   dashboard/         LiveRound, PredictionCard, StakePanel
   sections/          Hero, HeroCard, MarketTape, HowItWorks, Thesis, Markets, Token, Safety
   ui/                Panel, Button, ProbabilitySlider, ProbabilityBar, Countdown, Sparkline, …
-data/                ALL mock data and copy
-  markets.ts         markets + questions (prices null until a feed is connected)
-  rounds.ts          round id, pools, crowd probabilities, stake presets
+data/                market list, round config and site copy
+  markets.ts         markets + questions + price-feed symbols
+  rounds.ts          round config (pools/room odds stay empty until contracts are live)
   token.ts           $STAKES info — contractAddress is null (CA Coming Soon)
   site.ts            nav, hero copy, steps, thesis, safety copy
   legal.ts           /rules and /safety page content
 lib/
+  prices.ts          live price feed (Coinbase, Yahoo Finance, optional Finnhub)
   scoring.ts         illustrative Brier-score payout estimate
   round-clock.ts     hourly close time
   web3/              wallet list + deep links, EIP-6963 discovery, staking interface
-providers/           theme + wallet context
+providers/           theme, wallet and live-markets context
 hooks/               useCountdown
 ```
 
-## Connecting real data later
+## Live data
+
+Prices are live. `GET /api/prices` fetches them on the server and the page refreshes every 30 seconds.
+
+| Market | Source |
+|---|---|
+| ETH | Coinbase Exchange public candles (fallback: Yahoo Finance) |
+| NVIDIA, Alphabet | Yahoo Finance chart API (fallback: Finnhub if `FINNHUB_API_KEY` is set) |
+
+If every source fails, the card says "Live price unavailable" — no placeholder prices are ever shown.
+Round pools, entries and the room's odds come from the round contract, so they read "Opens at launch" until it is deployed.
+
+For the most reliable stock prices, create a free key at finnhub.io and add `FINNHUB_API_KEY` in Vercel → Settings → Environment Variables.
+
+## Connecting the contracts later
 
 | Replace | With |
 |---|---|
-| `getMarkets()` in `data/markets.ts` | your price API / oracle — fill `price`, `hourlyChangePct`, `history` and prices + charts appear automatically (no demo prices are shown) |
-| `getCurrentRound()` in `data/rounds.ts` | round contract reads / indexer |
+| `getCurrentRound()` in `data/rounds.ts` | round contract reads / indexer (pools, entries, room odds) |
 | `estimatePayout()` in `lib/scoring.ts` | the contract's real payout math |
 | `stakingService` in `lib/web3/staking.ts` | real contract writes (e.g. viem `writeContract` + receipt) |
 | `token.contractAddress` in `data/token.ts` | the real CA once live — every "Coming soon" updates automatically |

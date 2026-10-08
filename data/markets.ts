@@ -1,10 +1,11 @@
-import type { Market } from "@/lib/types";
+import type { LiveQuote, Market } from "@/lib/types";
 
 /**
  * Markets listed in each round.
- * Prices are intentionally null — no demo prices are shown. Connect a price
- * API / oracle in `getMarkets()` and fill `price`, `hourlyChangePct` and
- * `history`; the cards will render them automatically.
+ *
+ * Prices are filled live from /api/prices (see lib/prices.ts). Until the first
+ * response arrives — or if every price source fails — `price` stays null and
+ * the UI shows no price at all. No demo prices are ever used.
  */
 export const markets: Market[] = [
   {
@@ -14,10 +15,13 @@ export const markets: Market[] = [
     pair: "NVDA / USD",
     category: "Technology",
     price: null,
-    hourlyChangePct: null,
+    changePct: null,
+    changeWindow: "1h",
     history: [],
+    marketState: null,
+    feed: { yahoo: "NVDA", finnhub: "NVDA" },
     question: "Will NVIDIA finish higher this hour?",
-    source: "demo",
+    source: "api",
   },
   {
     id: "googl",
@@ -26,10 +30,13 @@ export const markets: Market[] = [
     pair: "GOOGL / USD",
     category: "Technology",
     price: null,
-    hourlyChangePct: null,
+    changePct: null,
+    changeWindow: "1h",
     history: [],
+    marketState: null,
+    feed: { yahoo: "GOOGL", finnhub: "GOOGL" },
     question: "Will Alphabet finish higher this hour?",
-    source: "demo",
+    source: "api",
   },
   {
     id: "eth",
@@ -38,10 +45,13 @@ export const markets: Market[] = [
     pair: "ETH / USD",
     category: "Crypto",
     price: null,
-    hourlyChangePct: null,
+    changePct: null,
+    changeWindow: "1h",
     history: [],
+    marketState: null,
+    feed: { yahoo: "ETH-USD", coinbase: "ETH-USD" },
     question: "Will ETH finish higher this hour?",
-    source: "demo",
+    source: "api",
   },
 ];
 
@@ -51,4 +61,20 @@ export function getMarkets(): Market[] {
 
 export function getMarket(id: string): Market | undefined {
   return markets.find((m) => m.id === id);
+}
+
+/** Merge live quotes into the market list. Markets without a quote keep price null. */
+export function withQuotes(list: Market[], quotes: Record<string, LiveQuote | null>): Market[] {
+  return list.map((m) => {
+    const q = quotes[m.id];
+    if (!q) return m;
+    return {
+      ...m,
+      price: q.price,
+      changePct: q.changePct,
+      changeWindow: q.changeWindow,
+      history: q.history,
+      marketState: q.marketState,
+    };
+  });
 }

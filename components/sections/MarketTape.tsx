@@ -1,29 +1,35 @@
-import { getMarkets } from "@/data/markets";
-import { getRoundMarket } from "@/data/rounds";
-import { MarketPrice } from "@/components/ui/MarketPrice";
+"use client";
 
-/** Terminal-style tape under the hero. Data comes from the markets feed. */
+import { useMarkets } from "@/providers/markets-provider";
+import { MarketPrice } from "@/components/ui/MarketPrice";
+import { cn } from "@/lib/cn";
+
+/** Terminal-style live price tape under the hero. */
 export function MarketTape() {
-  const markets = getMarkets();
-  const items = markets.map((m) => ({ m, crowd: getRoundMarket(m.id)?.crowdYes ?? 50 }));
+  const { markets, status } = useMarkets();
 
   return (
     <div className="relative border-y border-line bg-bg-elev">
       <div className="mx-auto flex max-w-[1240px] items-stretch overflow-x-auto px-4 sm:px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <div className="label flex shrink-0 items-center gap-2 border-r border-line py-3.5 pr-5 text-gold">
-          <span className="size-1.5 rotate-45 bg-gold" /> Room odds
+        <div
+          className={cn(
+            "label flex shrink-0 items-center gap-2 border-r border-line py-3.5 pr-5",
+            status === "live" ? "text-accent" : "text-muted",
+          )}
+        >
+          <span className={cn("size-1.5 rounded-full", status === "live" ? "animate-pulse bg-accent" : "bg-muted")} />
+          {status === "live" ? "Live" : status === "loading" ? "Connecting" : "Feed offline"}
         </div>
-        {items.map(({ m, crowd }) => {
-          return (
-            <div key={m.id} className="flex shrink-0 items-center gap-4 border-r border-line px-5 py-3.5 last:border-r-0">
-              <span className="num text-[12.5px] font-semibold text-fg">{m.symbol}</span>
+        {markets.map((m) => (
+          <div key={m.id} className="flex shrink-0 items-center gap-3 border-r border-line px-5 py-3.5 last:border-r-0">
+            <span className="num text-[12.5px] font-semibold text-fg">{m.symbol}</span>
+            {m.price !== null ? (
               <MarketPrice market={m} size="sm" />
-              <span className="num text-[12px] text-fg-soft">
-                <span className="text-accent">{crowd}%</span> YES
-              </span>
-            </div>
-          );
-        })}
+            ) : (
+              <span className="num text-[12px] text-muted">{status === "loading" ? "…" : "—"}</span>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );

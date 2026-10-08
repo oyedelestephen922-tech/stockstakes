@@ -62,8 +62,8 @@ export function Footer() {
             </span>
           </div>
           <p className="max-w-xl text-[11.5px] leading-relaxed text-muted md:text-right">
-            Round figures shown are demo data until contracts are live. Staking involves risk
-            of loss. Nothing here is financial advice. © {new Date().getFullYear()} {site.name}.
+            Prices are live market data from public feeds and may be delayed. Staking opens when round contracts go
+            live. Staking involves risk of loss. Nothing here is financial advice. © {new Date().getFullYear()} {site.name}.
           </p>
         </div>
       </div>

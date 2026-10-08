@@ -5,7 +5,7 @@ export const rulesPage = {
   title: "How a round works.",
   intro:
     "These are the rules StockStakes rounds are designed around. The deployed round contract is the final authority — when it is live, its address and source will be linked here.",
-  note: "Round contracts are not live yet. Everything on the site today is a preview using demo data, and no stakes can be placed.",
+  note: "Round contracts are not live yet. Prices on the site are live, but no stakes can be placed until launch.",
   sections: [
     {
       title: "Rounds",
@@ -77,9 +77,9 @@ export const safetyPage = {
       ],
     },
     {
-      title: "Demo data is labelled",
+      title: "Live data, clearly sourced",
       body: [
-        "No prices are shown until a live price feed is connected. Until contracts are live, round pools and crowd probabilities are demo data and are marked as such.",
+        "Prices on StockStakes are live market data from public feeds (Coinbase for ETH, Yahoo Finance for stocks) and can be delayed. Round pools, entries and the room's odds are shown only once the round contract is live — never as placeholder numbers.",
       ],
     },
     {

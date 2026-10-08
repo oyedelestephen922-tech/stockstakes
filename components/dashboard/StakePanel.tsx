@@ -14,7 +14,8 @@ import { stakingService } from "@/lib/web3/staking";
 import type { TxResult } from "@/lib/web3/types";
 import { estimatePayout } from "@/lib/scoring";
 import { formatEth } from "@/lib/format";
-import { stakeLimits, stakePresets } from "@/data/rounds";
+import { NEUTRAL_ROOM, stakeLimits, stakePresets } from "@/data/rounds";
+import { roundNumberAt } from "@/lib/round-clock";
 import { cn } from "@/lib/cn";
 import type { Market, PositionStatus, Round, RoundMarketState } from "@/lib/types";
 
@@ -66,7 +67,8 @@ export function StakePanel({
   useEffect(() => setResult(null), [selectedId, yes, stakeEth, wallet.status]);
 
   const market = markets.find((m) => m.id === selectedId)!;
-  const est = estimatePayout(yes, stakeEth, roundMarket.crowdYes);
+  const room = roundMarket.crowdYes;
+  const est = estimatePayout(yes, stakeEth, room ?? NEUTRAL_ROOM);
   const balance = wallet.session?.balanceEth ?? null;
 
   const parsed = Number(input);
@@ -86,7 +88,9 @@ export function StakePanel({
           ? "demo"
           : round.status === "open"
             ? "open"
-            : "closed";
+            : round.status === "prelaunch"
+              ? "unavailable"
+              : "closed";
 
   const onInput = (v: string) => {
     if (!/^\d*\.?\d{0,6}$/.test(v)) return;
@@ -100,7 +104,7 @@ export function StakePanel({
     setSubmitting(true);
     setResult(null);
     try {
-      const r = await stakingService.enterRound(round.id, { marketId: selectedId, yes, stakeEth }, wallet.session);
+      const r = await stakingService.enterRound(roundNumberAt(Date.now()), { marketId: selectedId, yes, stakeEth }, wallet.session);
       setResult(r);
     } finally {
       setSubmitting(false);
@@ -146,7 +150,7 @@ export function StakePanel({
         <p className="mt-3 text-[14px] text-fg-soft">{market.question}</p>
 
         <div className="mt-5">
-          <ProbabilitySlider yes={yes} onChange={onYesChange} crowdYes={roundMarket.crowdYes} />
+          <ProbabilitySlider yes={yes} onChange={onYesChange} crowdYes={room ?? undefined} />
         </div>
 
         {/* stake amount */}
@@ -230,8 +234,10 @@ export function StakePanel({
         </div>
         <p className="mt-2 flex items-start gap-1.5 text-[11px] leading-relaxed text-muted">
           <Info className="mt-px size-3 shrink-0" />
-          Estimates use demo round data (room average {roundMarket.crowdYes}% YES, {formatEth(roundMarket.poolEth, 2)} ETH
-          pool). Not a guarantee — you can lose your stake.
+          {room !== null
+            ? `Estimate compares your call with the room's average (${room}% YES).`
+            : "Estimate compares your call with a neutral 50/50 room until live rounds open."}{" "}
+          Not a guarantee — you can lose your stake.
         </p>
 
         <div className="mt-5 rounded-[11px] border border-line bg-panel-2/60 p-4">
@@ -245,7 +251,7 @@ export function StakePanel({
               <Wallet className="size-4" /> Connect Wallet
             </Button>
           ) : (
-            <Button size="lg" className="w-full" onClick={place} disabled={Boolean(error) || submitting || round.status !== "open"}>
+            <Button size="lg" className="w-full" onClick={place} disabled={Boolean(error) || submitting || round.status === "closed" || round.status === "settling" || round.status === "settled"}>
               {submitting ? (
                 <>
                   <LoaderCircle className="size-4 animate-spin" /> Preparing…

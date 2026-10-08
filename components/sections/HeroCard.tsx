@@ -6,15 +6,19 @@ import { StatusPill } from "@/components/ui/StatusPill";
 import { Sparkline } from "@/components/ui/Sparkline";
 import { Countdown } from "@/components/ui/Countdown";
 import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
-import { getMarket } from "@/data/markets";
+import { useMarkets } from "@/providers/markets-provider";
+import { useRoundNumber } from "@/hooks/use-round-number";
 import { getCurrentRound, heroPreview } from "@/data/rounds";
 import { formatEth, formatRoundId } from "@/lib/format";
-import { MarketPrice, hasPriceHistory } from "@/components/ui/MarketPrice";
+import { MarketPrice, MarketStateTag, hasPriceHistory } from "@/components/ui/MarketPrice";
 import { cn } from "@/lib/cn";
 
 export function HeroCard() {
-  const market = getMarket(heroPreview.marketId)!;
+  const { markets } = useMarkets();
+  const market = markets.find((m) => m.id === heroPreview.marketId)!;
   const round = getCurrentRound();
+  const roundNo = useRoundNumber();
+  const roundLabel = roundNo === null ? "#—" : formatRoundId(roundNo);
   const yes = heroPreview.yes;
   const no = 100 - yes;
 
@@ -39,7 +43,7 @@ export function HeroCard() {
         <div className="flex items-center justify-between border-b border-line px-5 py-3.5">
           <div className="flex items-center gap-3">
             <span className="label text-fg-soft">Next round</span>
-            <span className="num text-[12px] text-muted">{formatRoundId(round.id)}</span>
+            <span className="num text-[12px] text-muted">{roundLabel}</span>
           </div>
           <StatusPill status={round.status} />
         </div>
@@ -51,7 +55,7 @@ export function HeroCard() {
               <span className="num text-[13px] font-medium tracking-wide text-fg-soft">{market.pair}</span>
               <MarketPrice market={market} size="lg" className="mt-1" />
             </div>
-            <span className="label mt-0.5 rounded border border-gold/30 px-1.5 py-0.5 text-[9px] text-gold">Preview</span>
+            <MarketStateTag market={market} className="mt-1" />
           </div>
 
           {hasPriceHistory(market) && (
@@ -60,7 +64,7 @@ export function HeroCard() {
                 data={market.history}
                 width={400}
                 height={72}
-                positive={(market.hourlyChangePct ?? 0) >= 0}
+                positive={(market.changePct ?? 0) >= 0}
                 live
                 className="h-full w-full"
               />
@@ -114,8 +118,8 @@ export function HeroCard() {
           <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3.5 rounded-[11px] border border-line px-4 py-3.5 sm:grid-cols-4">
             <Stat label="Your stake" value={`${formatEth(heroPreview.stakeEth)} ETH`} />
             <Stat label="Conviction" value={`${Math.max(yes, no)}%`} valueClassName="text-accent" />
-            <Stat label="Round" value={formatRoundId(round.id)} />
-            <Stat label="Status" value={round.status.toUpperCase()} />
+            <Stat label="Round" value={roundLabel} />
+            <Stat label="Status" value="PRE-LAUNCH" valueClassName="text-gold" />
           </div>
 
           <div className="mt-4">
@@ -123,7 +127,7 @@ export function HeroCard() {
           </div>
         </div>
         <div className="border-t border-line bg-panel-2/60 px-5 py-2.5 font-mono text-[10.5px] tracking-wide text-muted">
-          Preview card · demo data · not a live position
+          Example call · live ETH price · not a live position
         </div>
       </Panel>
     </motion.div>

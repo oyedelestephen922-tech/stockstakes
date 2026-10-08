@@ -4,6 +4,7 @@ import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { WalletProvider } from "@/providers/wallet-provider";
+import { MarketsProvider } from "@/providers/markets-provider";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { WalletDialog } from "@/components/layout/WalletDialog";
@@ -47,6 +48,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-dvh">
         <ThemeProvider>
           <WalletProvider>
+            <MarketsProvider>
             <a
               href="#main"
               className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[200] focus:rounded-md focus:bg-accent-solid focus:px-3 focus:py-2 focus:text-accent-ink"
@@ -57,6 +59,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <main id="main">{children}</main>
             <Footer />
             <WalletDialog />
+            </MarketsProvider>
           </WalletProvider>
         </ThemeProvider>
       </body>

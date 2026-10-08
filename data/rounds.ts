@@ -1,33 +1,37 @@
 import type { Round, RoundMarketState } from "@/lib/types";
 
 /**
- * DEMO round data.
- * In production, read the current round from the round contract (id, status,
- * pools) and crowd probabilities from an indexer. Close time is derived from
- * the clock in `lib/round-clock.ts`, so it is never hardcoded here.
+ * Round configuration.
+ *
+ * Pools, entries and the room's average probability come from the round
+ * contract. It is not deployed yet, so those fields are null and the UI shows
+ * "Opens at launch" — never invented numbers. Round numbers and close times
+ * are derived from the clock (see lib/round-clock.ts).
  */
 export const currentRound: Round = {
-  id: 497608,
-  status: "open",
+  status: "prelaunch",
   durationMinutes: 60,
   closeBufferMinutes: 0,
-  settlementLabel: "After the hour",
-  source: "demo",
+  settlementLabel: "Top of the hour",
+  source: "api",
   markets: [
-    { marketId: "nvda", crowdYes: 61, poolEth: 4.82, entries: 213 },
-    { marketId: "googl", crowdYes: 47, poolEth: 3.15, entries: 168 },
-    { marketId: "eth", crowdYes: 66, poolEth: 7.4, entries: 341 },
+    { marketId: "nvda", crowdYes: null, poolEth: null, entries: null },
+    { marketId: "googl", crowdYes: null, poolEth: null, entries: null },
+    { marketId: "eth", crowdYes: null, poolEth: null, entries: null },
   ],
 };
 
-/** Default call shown before the user changes anything. */
+/** Neutral reference used for estimates while there is no live room. */
+export const NEUTRAL_ROOM = 50;
+
+/** Starting call shown before the user changes anything. */
 export const defaultCalls: Record<string, { yes: number; stakeEth: number }> = {
-  nvda: { yes: 68, stakeEth: 0.025 },
-  googl: { yes: 44, stakeEth: 0.025 },
+  nvda: { yes: 65, stakeEth: 0.025 },
+  googl: { yes: 45, stakeEth: 0.025 },
   eth: { yes: 72, stakeEth: 0.025 },
 };
 
-/** Hero preview card. */
+/** Hero preview card (an example call, not a live position). */
 export const heroPreview = {
   marketId: "eth",
   yes: 72,

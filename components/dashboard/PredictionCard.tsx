@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/Button";
 import { ProbabilityBar } from "@/components/ui/ProbabilityBar";
 import { ProbabilitySlider } from "@/components/ui/ProbabilitySlider";
 import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
-import { AssetGlyph } from "@/components/ui/AssetGlyph";
 import { estimatePayout } from "@/lib/scoring";
 import { formatEth } from "@/lib/format";
-import { MarketPrice } from "@/components/ui/MarketPrice";
+import { MarketPrice, MarketStateTag } from "@/components/ui/MarketPrice";
+import { NEUTRAL_ROOM } from "@/data/rounds";
 import { cn } from "@/lib/cn";
 import type { Market, RoundMarketState } from "@/lib/types";
 
@@ -39,7 +39,8 @@ export function PredictionCard({
 }: PredictionCardProps) {
   const no = 100 - yes;
   const side = yes >= 50 ? "YES" : "NO";
-  const est = estimatePayout(yes, stakeEth, roundMarket.crowdYes);
+  const room = roundMarket.crowdYes;
+  const est = estimatePayout(yes, stakeEth, room ?? NEUTRAL_ROOM);
 
   // Choosing a side mirrors the probability so your conviction carries over.
   const pickSide = (s: "YES" | "NO") => {
@@ -60,18 +61,22 @@ export function PredictionCard({
         {/* left: asset, question, split */}
         <div className="min-w-0">
           <div className="flex items-center justify-between gap-3">
-            <div className="flex min-w-0 items-center gap-3">
-              <AssetGlyph symbol={market.symbol} />
-              <div className="min-w-0">
-                <h3 className="truncate text-[16px] font-semibold tracking-tight text-fg">{market.name}</h3>
-                {market.price !== null ? (
-                  <MarketPrice market={market} size="sm" />
-                ) : (
-                  <span className="num text-[12px] text-muted">{market.pair}</span>
-                )}
+            <div className="min-w-0">
+              <div className="flex items-baseline gap-2">
+                <h3 className="truncate text-[17px] font-semibold tracking-tight text-fg">{market.name}</h3>
+                <span className="num text-[11.5px] text-muted">{market.symbol}</span>
               </div>
+              {market.price !== null ? (
+                <MarketPrice market={market} size="sm" className="mt-0.5" />
+              ) : (
+                <span className="num text-[12px] text-muted">{market.pair}</span>
+              )}
             </div>
-            <span className="label shrink-0">{market.category}</span>
+            {market.price !== null ? (
+              <MarketStateTag market={market} className="shrink-0" />
+            ) : (
+              <span className="label shrink-0">{market.category}</span>
+            )}
           </div>
 
           <p className="mt-4 text-[15.5px] font-medium leading-snug tracking-[-0.01em] text-fg">{market.question}</p>
@@ -112,14 +117,18 @@ export function PredictionCard({
             })}
           </div>
 
-          <ProbabilityBar yes={yes} crowdYes={roundMarket.crowdYes} className="mt-4" />
+          <ProbabilityBar yes={yes} crowdYes={room ?? undefined} className="mt-4" />
           <div className="mt-2 flex justify-between font-mono text-[10.5px] text-muted">
             <span>
               You <span className="text-fg-soft">{yes}/{no}</span>
             </span>
-            <span className="flex items-center gap-1.5">
-              <span className="size-1.5 rotate-45 bg-gold" /> Room {roundMarket.crowdYes}/{100 - roundMarket.crowdYes}
-            </span>
+            {room !== null ? (
+              <span className="flex items-center gap-1.5">
+                <span className="size-1.5 rotate-45 bg-gold" /> Room {room}/{100 - room}
+              </span>
+            ) : (
+              <span>Room odds open at launch</span>
+            )}
           </div>
         </div>
 
@@ -127,7 +136,11 @@ export function PredictionCard({
         <div className="flex min-w-0 flex-col justify-between gap-4 border-t border-line pt-4 md:border-l md:border-t-0 md:pl-6 md:pt-0">
           <div className="grid grid-cols-2 gap-4">
             <Stat label="Stake" value={`${formatEth(stakeEth)} ETH`} />
-            <Stat label="Pool" value={`${formatEth(roundMarket.poolEth, 2)} ETH`} valueClassName="text-fg-soft" />
+            <Stat
+              label="Pool"
+              value={roundMarket.poolEth !== null ? `${formatEth(roundMarket.poolEth, 2)} ETH` : "Opens at launch"}
+              valueClassName="text-fg-soft"
+            />
             <div className="col-span-2">
               <span className="label block">Estimated reward · if {side}</span>
               <div className="mt-1 flex items-baseline gap-2">
@@ -139,7 +152,7 @@ export function PredictionCard({
                 <span className="num text-[12px] text-muted">ETH</span>
               </div>
               <span className="num mt-0.5 block text-[11px] text-muted">
-                if {side === "YES" ? "NO" : "YES"}: {formatEth(side === "YES" ? est.ifNo : est.ifYes, 4)} ETH · illustrative
+                if {side === "YES" ? "NO" : "YES"}: {formatEth(side === "YES" ? est.ifNo : est.ifYes, 4)} ETH · vs {room !== null ? "the room" : "a 50/50 room"}
               </span>
             </div>
           </div>
@@ -164,7 +177,7 @@ export function PredictionCard({
             className="overflow-hidden"
           >
             <div className="border-t border-line px-5 pb-5 pt-4">
-              <ProbabilitySlider yes={yes} onChange={onYesChange} crowdYes={roundMarket.crowdYes} compact />
+              <ProbabilitySlider yes={yes} onChange={onYesChange} crowdYes={room ?? undefined} compact />
             </div>
           </motion.div>
         )}

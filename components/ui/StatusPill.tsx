@@ -4,6 +4,7 @@ import type { DataSource, PositionStatus, RoundStatus } from "@/lib/types";
 type Status = PositionStatus | RoundStatus | DataSource;
 
 const styles: Record<string, { label: string; cls: string; dot?: string; pulse?: boolean }> = {
+  prelaunch: { label: "Pre-launch", cls: "text-gold border-gold/30 bg-gold-soft", dot: "bg-gold" },
   open: { label: "Open", cls: "text-accent border-accent/30 bg-accent-soft", dot: "bg-accent", pulse: true },
   closed: { label: "Closed", cls: "text-muted border-line-strong bg-panel-2", dot: "bg-muted" },
   settling: { label: "Settling", cls: "text-gold border-gold/30 bg-gold-soft", dot: "bg-gold", pulse: true },
@@ -12,7 +13,7 @@ const styles: Record<string, { label: string; cls: string; dot?: string; pulse?:
   demo: { label: "Demo data", cls: "text-gold border-gold/30 bg-gold-soft", dot: "bg-gold" },
   "awaiting-wallet": { label: "Awaiting wallet", cls: "text-muted border-line-strong bg-panel-2", dot: "bg-muted" },
   unavailable: { label: "Not live", cls: "text-muted border-line-strong bg-panel-2", dot: "bg-muted" },
-  api: { label: "Live API", cls: "text-accent border-accent/30 bg-accent-soft", dot: "bg-accent" },
+  api: { label: "Live", cls: "text-accent border-accent/30 bg-accent-soft", dot: "bg-accent", pulse: true },
   oracle: { label: "Oracle", cls: "text-accent border-accent/30 bg-accent-soft", dot: "bg-accent" },
 };
 
