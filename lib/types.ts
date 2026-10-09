@@ -5,13 +5,19 @@
 
 export type MarketCategory =
   | "Crypto"
-  | "Technology"
+  | "Tech"
+  | "Chips"
   | "Consumer"
-  | "Aerospace"
   | "Healthcare"
   | "Finance"
-  | "Entertainment"
+  | "Media"
+  | "Energy"
+  | "Industrials"
+  | "Space & Defense"
   | "ETF";
+
+/** What kind of asset a market tracks (decides the price source and trading hours). */
+export type AssetKind = "crypto" | "stock" | "etf";
 
 /** Data provenance — every number on screen says where it came from. */
 export type DataSource = "demo" | "api" | "oracle";
@@ -49,6 +55,9 @@ export interface Market {
   name: string; // e.g. "NVIDIA"
   pair: string; // e.g. "NVDA / USD"
   category: MarketCategory;
+  kind: AssetKind;
+  /** Shown in the scrolling price tape and first in lists. */
+  featured: boolean;
   /** Live price from /api/prices. null until it loads or if every source fails — the UI then shows nothing. */
   price: number | null;
   changePct: number | null;

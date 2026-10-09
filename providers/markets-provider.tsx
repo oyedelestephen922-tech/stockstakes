@@ -22,7 +22,7 @@ export function MarketsProvider({ children }: { children: React.ReactNode }) {
   const [quotes, setQuotes] = useState<Record<string, LiveQuote | null>>({});
   const [status, setStatus] = useState<MarketsContextValue["status"]>("loading");
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
-  const [selectedId, setSelectedId] = useState<string>(() => getMarkets().find((m) => m.category !== "Crypto")?.id ?? getMarkets()[0].id);
+  const [selectedId, setSelectedId] = useState<string>(() => getMarkets().find((m) => m.kind !== "crypto")?.id ?? getMarkets()[0].id);
 
   useEffect(() => {
     let cancelled = false;

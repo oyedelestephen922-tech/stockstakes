@@ -37,7 +37,7 @@ export function MarketTape() {
         <div className="tape-track flex w-max">
           {[0, 1].map((copy) => (
             <div key={copy} className="flex" aria-hidden={copy === 1}>
-              {markets.map((m) => (
+              {markets.filter((m) => m.featured).map((m) => (
                 <TapeItem key={`${copy}-${m.id}`} m={m} status={status} />
               ))}
             </div>

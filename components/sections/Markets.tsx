@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ArrowUpRight, ChevronDown } from "lucide-react";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { Reveal } from "@/components/ui/Reveal";
@@ -10,9 +10,12 @@ import { StatusPill } from "@/components/ui/StatusPill";
 import { Button } from "@/components/ui/Button";
 import { MarketPrice, MarketStateTag, hasPriceHistory } from "@/components/ui/MarketPrice";
 import { useMarkets } from "@/providers/markets-provider";
-import type { Market } from "@/lib/types";
+import { marketCategories } from "@/data/markets";
+import { cn } from "@/lib/cn";
+import type { Market, MarketCategory } from "@/lib/types";
 
 const INITIAL = 6;
+const STEP = 12;
 
 function MarketCard({
   market,
@@ -82,8 +85,14 @@ function MarketCard({
 
 export function Markets() {
   const { markets, status, select } = useMarkets();
-  const [showAll, setShowAll] = useState(false);
-  const visible = showAll ? markets : markets.slice(0, INITIAL);
+  const [category, setCategory] = useState<MarketCategory | "All">("All");
+  const [limit, setLimit] = useState(INITIAL);
+  const list = useMemo(
+    () => (category === "All" ? markets : markets.filter((m) => m.category === category)),
+    [markets, category],
+  );
+  const visible = list.slice(0, limit);
+  const remaining = list.length - visible.length;
 
   const callOn = (id: string) => {
     select(id);
@@ -97,7 +106,7 @@ export function Markets() {
           index="04"
           eyebrow="Markets"
           title="Markets on the board"
-          body={`${markets.length} markets across crypto, tech, consumer, healthcare and ETFs. Prices update live every 30 seconds.`}
+          body={`${markets.length} markets: every Robinhood Stock Token plus ETH. Prices update live every 30 seconds.`}
           aside={
             <StatusPill
               status={status === "live" ? "api" : "pending"}
@@ -105,6 +114,31 @@ export function Markets() {
             />
           }
         />
+
+        <div className="-mx-1 mb-6 flex gap-1.5 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="tablist" aria-label="Category">
+          {(["All", ...marketCategories] as const).map((c) => {
+            const count = c === "All" ? markets.length : markets.filter((m) => m.category === c).length;
+            return (
+              <button
+                key={c}
+                type="button"
+                role="tab"
+                aria-selected={category === c}
+                onClick={() => {
+                  setCategory(c);
+                  setLimit(INITIAL);
+                }}
+                className={cn(
+                  "flex h-9 shrink-0 items-center gap-2 rounded-full border px-4 font-mono text-[11px] uppercase tracking-[0.1em] transition-colors",
+                  category === c ? "border-accent/50 bg-accent-soft text-accent" : "border-line text-fg-soft hover:border-line-strong hover:text-fg",
+                )}
+              >
+                {c}
+                <span className="text-muted">{count}</span>
+              </button>
+            );
+          })}
+        </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {visible.map((m, i) => (
@@ -114,12 +148,24 @@ export function Markets() {
           ))}
         </div>
 
-        {markets.length > INITIAL && (
-          <div className="mt-8 flex justify-center">
-            <Button variant="secondary" onClick={() => setShowAll((s) => !s)} aria-expanded={showAll}>
-              {showAll ? "Show fewer" : `Show all ${markets.length} markets`}
-              <ChevronDown className={`size-4 transition-transform ${showAll ? "rotate-180" : ""}`} />
-            </Button>
+        {(remaining > 0 || limit > INITIAL) && (
+          <div className="mt-8 flex flex-wrap justify-center gap-2">
+            {remaining > 0 && (
+              <Button variant="secondary" onClick={() => setLimit((l) => l + STEP)}>
+                Show {Math.min(STEP, remaining)} more
+                <ChevronDown className="size-4" />
+              </Button>
+            )}
+            {remaining > STEP && (
+              <Button variant="ghost" onClick={() => setLimit(list.length)}>
+                Show all {list.length}
+              </Button>
+            )}
+            {remaining === 0 && limit > INITIAL && (
+              <Button variant="ghost" onClick={() => setLimit(INITIAL)}>
+                Show fewer
+              </Button>
+            )}
           </div>
         )}
       </div>

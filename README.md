@@ -50,12 +50,16 @@ hooks/               useCountdown
 
 Prices are live. `GET /api/prices` fetches them on the server and the page refreshes every 30 seconds.
 
+StockStakes lists **107 markets**: every active Robinhood Stock Token from the official registry (`api.robinhood.com/rhj/assets`, the same source getstock.fun uses) plus ETH.
+
 | Market | Source |
 |---|---|
 | ETH | Coinbase Exchange public candles (fallback: Yahoo Finance) |
-| Stocks & ETFs (NVDA, TSLA, SPCX, AAPL, GOOGL, MSTR, GME, RDDT, HIMS, LLY, TTWO, QQQ, SLV) | Yahoo Finance chart API (fallback: Finnhub if `FINNHUB_API_KEY` is set) |
+| Stocks & ETFs | Yahoo Finance spark, batched 20 per request → Yahoo chart per symbol for any gaps → Finnhub (if `FINNHUB_API_KEY` is set) |
 
-To add or remove a market, edit the list at the top of `data/markets.ts` — one line per market.
+Prices are cached on the server for 25 seconds, so all 107 load with about 9 upstream requests no matter how many people are on the site.
+
+To add or remove a market, edit the list in `data/markets.ts` — one line per market. The first 27 lines are the "Popular" markets shown first and in the scrolling price tape.
 
 If every source fails, the card says "Live price unavailable" — no placeholder prices are ever shown.
 Round pools, entries and the room's odds come from the round contract, so they read "Opens at launch" until it is deployed.

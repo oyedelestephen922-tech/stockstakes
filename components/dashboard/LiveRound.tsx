@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Search, X } from "lucide-react";
+import { ChevronDown, Search, X } from "lucide-react";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { Reveal } from "@/components/ui/Reveal";
 import { StatusPill } from "@/components/ui/StatusPill";
@@ -21,6 +21,8 @@ import type { MarketCategory } from "@/lib/types";
 
 type Calls = Record<string, { yes: number; stakeEth: number }>;
 
+const BOARD_ROWS = 12;
+
 export function LiveRound() {
   const round = getCurrentRound();
   const { markets, status: priceStatus, selectedId, select } = useMarkets();
@@ -29,6 +31,7 @@ export function LiveRound() {
   const [adjusting, setAdjusting] = useState(false);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<MarketCategory | "All">("All");
+  const [expanded, setExpanded] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -53,6 +56,8 @@ export function LiveRound() {
         (!q || m.symbol.toLowerCase().includes(q) || m.name.toLowerCase().includes(q)),
     );
   }, [markets, selected.id, category, query]);
+
+  const filtering = category !== "All" || query.trim() !== "";
 
   const choose = (id: string) => {
     select(id);
@@ -174,9 +179,20 @@ export function LiveRound() {
               </div>
 
               <div className="flex flex-col gap-2">
-                {others.map((m) => (
+                {(filtering || expanded ? others : others.slice(0, BOARD_ROWS)).map((m) => (
                   <MarketRow key={m.id} market={m} yes={calls[m.id].yes} priceStatus={priceStatus} onSelect={() => choose(m.id)} />
                 ))}
+                {!filtering && others.length > BOARD_ROWS && (
+                  <button
+                    type="button"
+                    onClick={() => setExpanded((e) => !e)}
+                    aria-expanded={expanded}
+                    className="mt-1 flex h-11 items-center justify-center gap-2 rounded-[12px] border border-dashed border-line-strong text-[13.5px] font-medium text-fg-soft transition-colors hover:border-fg/30 hover:text-fg"
+                  >
+                    {expanded ? "Show fewer" : `Show all ${others.length + 1} markets`}
+                    <ChevronDown className={cn("size-4 transition-transform", expanded && "rotate-180")} />
+                  </button>
+                )}
                 {others.length === 0 && (
                   <p className="rounded-[12px] border border-dashed border-line-strong px-4 py-6 text-center text-[13px] text-muted">
                     No other markets match. Try a different search or category.

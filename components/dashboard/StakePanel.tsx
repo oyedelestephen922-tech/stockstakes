@@ -15,6 +15,7 @@ import type { TxResult } from "@/lib/web3/types";
 import { estimatePayout } from "@/lib/scoring";
 import { formatEth } from "@/lib/format";
 import { NEUTRAL_ROOM, stakeLimits, stakePresets } from "@/data/rounds";
+import { marketCategories } from "@/data/markets";
 import { roundNumberAt } from "@/lib/round-clock";
 import { cn } from "@/lib/cn";
 import type { Market, PositionStatus, Round, RoundMarketState } from "@/lib/types";
@@ -130,11 +131,28 @@ export function StakePanel({
             onChange={(e) => onSelect(e.target.value)}
             className="num h-11 w-full cursor-pointer appearance-none rounded-[11px] border border-line bg-panel-2 pl-4 pr-10 text-[14px] font-medium text-fg outline-none transition-colors hover:border-line-strong focus:border-accent/60"
           >
-            {markets.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.symbol} · {m.name}
-              </option>
-            ))}
+            <optgroup label="Popular">
+              {markets
+                .filter((m) => m.featured)
+                .map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.symbol} · {m.name}
+                  </option>
+                ))}
+            </optgroup>
+            {marketCategories.map((c) => {
+              const rest = markets.filter((m) => !m.featured && m.category === c);
+              if (!rest.length) return null;
+              return (
+                <optgroup key={c} label={c}>
+                  {rest.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.symbol} · {m.name}
+                    </option>
+                  ))}
+                </optgroup>
+              );
+            })}
           </select>
           <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 size-4 -translate-y-1/2 text-muted" />
         </div>

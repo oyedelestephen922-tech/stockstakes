@@ -38,7 +38,7 @@ export function SectionHeading({
         </h2>
         {body && <p className="mt-4 max-w-xl text-pretty text-[15.5px] leading-relaxed text-muted sm:text-base">{body}</p>}
       </div>
-      {aside}
+      {aside && <div className="shrink-0 self-start md:self-auto">{aside}</div>}
     </Reveal>
   );
 }
