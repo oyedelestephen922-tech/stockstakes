@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Info, LoaderCircle, Wallet, ArrowRight } from "lucide-react";
+import { Info, LoaderCircle, Wallet, ArrowRight, ChevronDown } from "lucide-react";
 import { Panel } from "@/components/ui/Panel";
 import { Button } from "@/components/ui/Button";
 import { ProbabilitySlider } from "@/components/ui/ProbabilitySlider";
@@ -119,33 +119,24 @@ export function StakePanel({
       </div>
 
       <div className="px-5 pb-5 pt-4">
-        {/* market switcher */}
-        <div className="grid grid-cols-3 gap-1 rounded-[11px] border border-line bg-panel-2 p-1" role="tablist" aria-label="Market">
-          {markets.map((m) => {
-            const active = m.id === selectedId;
-            return (
-              <button
-                key={m.id}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                onClick={() => onSelect(m.id)}
-                className={cn(
-                  "relative h-9 rounded-[8px] font-mono text-[12px] font-semibold tracking-wide transition-colors",
-                  active ? "text-fg" : "text-muted hover:text-fg-soft",
-                )}
-              >
-                {active && (
-                  <motion.span
-                    layoutId="stake-market"
-                    className="absolute inset-0 rounded-[8px] border border-line-strong bg-panel"
-                    transition={{ type: "spring", stiffness: 500, damping: 38 }}
-                  />
-                )}
-                <span className="relative">{m.symbol}</span>
-              </button>
-            );
-          })}
+        {/* market picker */}
+        <label htmlFor="stake-market" className="label block">
+          Market
+        </label>
+        <div className="relative mt-2">
+          <select
+            id="stake-market"
+            value={selectedId}
+            onChange={(e) => onSelect(e.target.value)}
+            className="num h-11 w-full cursor-pointer appearance-none rounded-[11px] border border-line bg-panel-2 pl-4 pr-10 text-[14px] font-medium text-fg outline-none transition-colors hover:border-line-strong focus:border-accent/60"
+          >
+            {markets.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.symbol} · {m.name}
+              </option>
+            ))}
+          </select>
+          <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 size-4 -translate-y-1/2 text-muted" />
         </div>
         <p className="mt-3 text-[14px] text-fg-soft">{market.question}</p>
 

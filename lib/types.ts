@@ -3,7 +3,15 @@
  * API, oracle or contract reader can replace it without touching components.
  */
 
-export type MarketCategory = "Technology" | "Crypto";
+export type MarketCategory =
+  | "Crypto"
+  | "Technology"
+  | "Consumer"
+  | "Aerospace"
+  | "Healthcare"
+  | "Finance"
+  | "Entertainment"
+  | "ETF";
 
 /** Data provenance — every number on screen says where it came from. */
 export type DataSource = "demo" | "api" | "oracle";

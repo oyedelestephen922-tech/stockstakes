@@ -190,3 +190,32 @@ input[type="number"] {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Native form controls (e.g. the market <select>) follow the theme */
+:root {
+  color-scheme: light;
+}
+.dark {
+  color-scheme: dark;
+}
+
+/* Scrolling price tape */
+@keyframes tape-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.tape-track {
+  animation: tape-scroll 55s linear infinite;
+}
+.tape-track:hover {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tape-track {
+    animation: none !important;
+  }
+}

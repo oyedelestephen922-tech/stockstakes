@@ -1,59 +1,57 @@
-import type { LiveQuote, Market } from "@/lib/types";
+import type { LiveQuote, Market, MarketCategory } from "@/lib/types";
 
 /**
- * Markets listed in each round.
+ * Markets listed in each round. Add or remove a line here to change the board —
+ * the round, prediction cards, stake panel and price feed all pick it up.
  *
  * Prices are filled live from /api/prices (see lib/prices.ts). Until the first
  * response arrives — or if every price source fails — `price` stays null and
  * the UI shows no price at all. No demo prices are ever used.
  */
-export const markets: Market[] = [
-  {
-    id: "nvda",
-    symbol: "NVDA",
-    name: "NVIDIA",
-    pair: "NVDA / USD",
-    category: "Technology",
-    price: null,
-    changePct: null,
-    changeWindow: "1h",
-    history: [],
-    marketState: null,
-    feed: { yahoo: "NVDA", finnhub: "NVDA" },
-    question: "Will NVIDIA finish higher this hour?",
-    source: "api",
-  },
-  {
-    id: "googl",
-    symbol: "GOOGL",
-    name: "Alphabet",
-    pair: "GOOGL / USD",
-    category: "Technology",
-    price: null,
-    changePct: null,
-    changeWindow: "1h",
-    history: [],
-    marketState: null,
-    feed: { yahoo: "GOOGL", finnhub: "GOOGL" },
-    question: "Will Alphabet finish higher this hour?",
-    source: "api",
-  },
-  {
-    id: "eth",
-    symbol: "ETH",
-    name: "Ethereum",
-    pair: "ETH / USD",
-    category: "Crypto",
-    price: null,
-    changePct: null,
-    changeWindow: "1h",
-    history: [],
-    marketState: null,
-    feed: { yahoo: "ETH-USD", coinbase: "ETH-USD" },
-    question: "Will ETH finish higher this hour?",
-    source: "api",
-  },
+interface MarketDef {
+  id: string;
+  symbol: string;
+  name: string; // full name shown on cards
+  short?: string; // name used in the question, defaults to `name`
+  category: MarketCategory;
+  feed: Market["feed"];
+}
+
+const defs: MarketDef[] = [
+  { id: "eth", symbol: "ETH", name: "Ethereum", short: "ETH", category: "Crypto", feed: { yahoo: "ETH-USD", coinbase: "ETH-USD" } },
+  { id: "nvda", symbol: "NVDA", name: "NVIDIA", category: "Technology", feed: { yahoo: "NVDA", finnhub: "NVDA" } },
+  { id: "tsla", symbol: "TSLA", name: "Tesla", category: "Consumer", feed: { yahoo: "TSLA", finnhub: "TSLA" } },
+  { id: "spcx", symbol: "SPCX", name: "SpaceX", category: "Aerospace", feed: { yahoo: "SPCX", finnhub: "SPCX" } },
+  { id: "aapl", symbol: "AAPL", name: "Apple", category: "Technology", feed: { yahoo: "AAPL", finnhub: "AAPL" } },
+  { id: "googl", symbol: "GOOGL", name: "Alphabet", category: "Technology", feed: { yahoo: "GOOGL", finnhub: "GOOGL" } },
+  { id: "mstr", symbol: "MSTR", name: "Strategy", category: "Finance", feed: { yahoo: "MSTR", finnhub: "MSTR" } },
+  { id: "gme", symbol: "GME", name: "GameStop", category: "Consumer", feed: { yahoo: "GME", finnhub: "GME" } },
+  { id: "rddt", symbol: "RDDT", name: "Reddit", category: "Technology", feed: { yahoo: "RDDT", finnhub: "RDDT" } },
+  { id: "hims", symbol: "HIMS", name: "Hims & Hers", category: "Healthcare", feed: { yahoo: "HIMS", finnhub: "HIMS" } },
+  { id: "lly", symbol: "LLY", name: "Eli Lilly", category: "Healthcare", feed: { yahoo: "LLY", finnhub: "LLY" } },
+  { id: "ttwo", symbol: "TTWO", name: "Take-Two", category: "Entertainment", feed: { yahoo: "TTWO", finnhub: "TTWO" } },
+  { id: "qqq", symbol: "QQQ", name: "Invesco QQQ", short: "QQQ", category: "ETF", feed: { yahoo: "QQQ", finnhub: "QQQ" } },
+  { id: "slv", symbol: "SLV", name: "iShares Silver Trust", short: "Silver (SLV)", category: "ETF", feed: { yahoo: "SLV", finnhub: "SLV" } },
 ];
+
+export const markets: Market[] = defs.map((d) => ({
+  id: d.id,
+  symbol: d.symbol,
+  name: d.name,
+  pair: `${d.symbol} / USD`,
+  category: d.category,
+  price: null,
+  changePct: null,
+  changeWindow: "1h",
+  history: [],
+  marketState: null,
+  feed: d.feed,
+  question: `Will ${d.short ?? d.name} finish higher this hour?`,
+  source: "api",
+}));
+
+/** Categories in board order, for filter chips. */
+export const marketCategories: MarketCategory[] = Array.from(new Set(markets.map((m) => m.category)));
 
 export function getMarkets(): Market[] {
   return markets;

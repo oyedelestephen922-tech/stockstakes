@@ -11,6 +11,9 @@ interface MarketsContextValue {
   /** "loading" before the first response, "live" when at least one price is in, "unavailable" if none could be fetched. */
   status: "loading" | "live" | "unavailable";
   updatedAt: Date | null;
+  /** Market currently open in the live round. */
+  selectedId: string;
+  select: (id: string) => void;
 }
 
 const MarketsContext = createContext<MarketsContextValue | null>(null);
@@ -19,6 +22,7 @@ export function MarketsProvider({ children }: { children: React.ReactNode }) {
   const [quotes, setQuotes] = useState<Record<string, LiveQuote | null>>({});
   const [status, setStatus] = useState<MarketsContextValue["status"]>("loading");
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
+  const [selectedId, setSelectedId] = useState<string>(() => getMarkets().find((m) => m.category !== "Crypto")?.id ?? getMarkets()[0].id);
 
   useEffect(() => {
     let cancelled = false;
@@ -66,8 +70,8 @@ export function MarketsProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo<MarketsContextValue>(
-    () => ({ markets: withQuotes(getMarkets(), quotes), status, updatedAt }),
-    [quotes, status, updatedAt],
+    () => ({ markets: withQuotes(getMarkets(), quotes), status, updatedAt, selectedId, select: setSelectedId }),
+    [quotes, status, updatedAt, selectedId],
   );
 
   return <MarketsContext.Provider value={value}>{children}</MarketsContext.Provider>;

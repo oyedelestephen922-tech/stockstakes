@@ -168,7 +168,17 @@ export async function getQuote(market: Market): Promise<LiveQuote | null> {
   return firstOk(attempts);
 }
 
+const CONCURRENCY = 5;
+
 export async function getQuotes(list: Market[]): Promise<Record<string, LiveQuote | null>> {
-  const entries = await Promise.all(list.map(async (m) => [m.id, await getQuote(m)] as const));
-  return Object.fromEntries(entries);
+  const out: Record<string, LiveQuote | null> = {};
+  let next = 0;
+  const worker = async () => {
+    while (next < list.length) {
+      const m = list[next++];
+      out[m.id] = await getQuote(m);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(CONCURRENCY, list.length) }, worker));
+  return out;
 }

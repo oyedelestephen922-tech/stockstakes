@@ -32,7 +32,7 @@ components/
   sections/          Hero, HeroCard, MarketTape, HowItWorks, Thesis, Markets, Token, Safety
   ui/                Panel, Button, ProbabilitySlider, ProbabilityBar, Countdown, Sparkline, …
 data/                market list, round config and site copy
-  markets.ts         markets + questions + price-feed symbols
+  markets.ts         the market list (one line per market) + price-feed symbols
   rounds.ts          round config (pools/room odds stay empty until contracts are live)
   token.ts           $STAKES info — contractAddress is null (CA Coming Soon)
   site.ts            nav, hero copy, steps, thesis, safety copy
@@ -53,7 +53,9 @@ Prices are live. `GET /api/prices` fetches them on the server and the page refre
 | Market | Source |
 |---|---|
 | ETH | Coinbase Exchange public candles (fallback: Yahoo Finance) |
-| NVIDIA, Alphabet | Yahoo Finance chart API (fallback: Finnhub if `FINNHUB_API_KEY` is set) |
+| Stocks & ETFs (NVDA, TSLA, SPCX, AAPL, GOOGL, MSTR, GME, RDDT, HIMS, LLY, TTWO, QQQ, SLV) | Yahoo Finance chart API (fallback: Finnhub if `FINNHUB_API_KEY` is set) |
+
+To add or remove a market, edit the list at the top of `data/markets.ts` — one line per market.
 
 If every source fails, the card says "Live price unavailable" — no placeholder prices are ever shown.
 Round pools, entries and the room's odds come from the round contract, so they read "Opens at launch" until it is deployed.

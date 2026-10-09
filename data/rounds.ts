@@ -1,4 +1,5 @@
 import type { Round, RoundMarketState } from "@/lib/types";
+import { markets } from "./markets";
 
 /**
  * Round configuration.
@@ -14,22 +15,16 @@ export const currentRound: Round = {
   closeBufferMinutes: 0,
   settlementLabel: "Top of the hour",
   source: "api",
-  markets: [
-    { marketId: "nvda", crowdYes: null, poolEth: null, entries: null },
-    { marketId: "googl", crowdYes: null, poolEth: null, entries: null },
-    { marketId: "eth", crowdYes: null, poolEth: null, entries: null },
-  ],
+  markets: markets.map((m) => ({ marketId: m.id, crowdYes: null, poolEth: null, entries: null })),
 };
 
 /** Neutral reference used for estimates while there is no live room. */
 export const NEUTRAL_ROOM = 50;
 
-/** Starting call shown before the user changes anything. */
-export const defaultCalls: Record<string, { yes: number; stakeEth: number }> = {
-  nvda: { yes: 65, stakeEth: 0.025 },
-  googl: { yes: 45, stakeEth: 0.025 },
-  eth: { yes: 72, stakeEth: 0.025 },
-};
+/** Starting call shown before the user changes anything (a mild YES lean). */
+export const defaultCalls: Record<string, { yes: number; stakeEth: number }> = Object.fromEntries(
+  markets.map((m) => [m.id, { yes: 60, stakeEth: 0.025 }]),
+);
 
 /** Hero preview card (an example call, not a live position). */
 export const heroPreview = {
