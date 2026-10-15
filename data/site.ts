@@ -130,7 +130,7 @@ export const safety = {
     {
       key: "addresses",
       title: "No invented addresses",
-      body: "The $STAKES contract address appears here only once it is live. Until then: CA Coming Soon.",
+      body: "The only official $STAKES contract address is the one shown on this site and posted by @StockStakes. Anything else is fake.",
     },
   ],
 } as const;

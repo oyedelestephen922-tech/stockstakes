@@ -8,8 +8,8 @@ import type { TokenInfo } from "@/lib/types";
 export const token: TokenInfo = {
   symbol: "$STAKES",
   name: "StockStakes",
-  contractAddress: null,
-  chain: null,
+  contractAddress: "0x5fdd55212ec2D224345e52BB258AEe916bC39f65",
+  chain: "Robinhood Chain",
   description: "$STAKES is the native token powering the StockStakes ecosystem.",
 };
 
@@ -24,6 +24,6 @@ export const tokenPillars = [
   },
   {
     title: "Transparency",
-    body: "The contract address is published here — and only here — once live.",
+    body: "The official contract address is published here and on @StockStakes. Nowhere else.",
   },
 ] as const;

@@ -57,7 +57,7 @@ export function Footer() {
         <div className="mt-14 flex flex-col gap-4 border-t border-line pt-6 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-wrap items-center gap-2 font-mono text-[12px]">
             <span className="text-muted">{token.symbol} CA:</span>
-            <span className="rounded-md border border-dashed border-line-strong px-2 py-0.5 text-gold">
+            <span className="break-all rounded-md border border-dashed border-line-strong px-2 py-0.5 text-gold">
               {token.contractAddress ?? "Coming soon"}
             </span>
           </div>
