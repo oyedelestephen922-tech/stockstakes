@@ -22,6 +22,7 @@
     "export:site": "node scripts/export-site.ts",
     "fork:node": "hardhat node --network robinhoodFork",
     "deploy:local": "hardhat run scripts/deploy.ts --network localhost",
-    "keeper": "node keeper/run.ts"
+    "keeper": "node keeper/run.ts",
+    "preflight": "node scripts/preflight.ts"
   }
 }
