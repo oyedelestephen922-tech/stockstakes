@@ -1,0 +1,38 @@
+{
+  "chainId": 4663,
+  "network": "robinhood",
+  "deployer": "0xb7265AE3942E645F77ec0808d15632138C0995Dd",
+  "owner": "0xb7265AE3942E645F77ec0808d15632138C0995Dd",
+  "keeper": "0xC49bFD99C1f05F054dc654494b809596045B3522",
+  "guardian": "0xb7265AE3942E645F77ec0808d15632138C0995Dd",
+  "params": {
+    "challengeWindowSeconds": 3600,
+    "postDeadlineSeconds": 21600,
+    "maxDeviationBps": 300,
+    "maxFeedAgeSeconds": 93600,
+    "feeBps": 300,
+    "entryCutoffSeconds": 60,
+    "minStakeEth": "0.001",
+    "maxStakeEth": "0.1"
+  },
+  "StakesOracle": {
+    "address": "0x6f28AB061F120AC07e88F9DF00072F0895440504",
+    "block": 89210483,
+    "constructorArgs": [
+      "0xb7265AE3942E645F77ec0808d15632138C0995Dd",
+      "0xC49bFD99C1f05F054dc654494b809596045B3522",
+      "0xb7265AE3942E645F77ec0808d15632138C0995Dd",
+      {
+        "$bigint": "3600"
+      },
+      {
+        "$bigint": "21600"
+      },
+      300,
+      93600
+    ]
+  },
+  "StakesRounds": {},
+  "updatedAt": "2026-10-15T19:58:52.993Z",
+  "note": "StakesOracle recorded by hand from tx 0x284c9265ddecc7036778ac96a4f26449b8dbe0ede62a4463628c6d2b4084739c after the first run lost track of it"
+}

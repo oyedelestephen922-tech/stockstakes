@@ -179,11 +179,15 @@ async function ensureDeployed(name: "StakesOracle" | "StakesRounds", args: unkno
     }
     console.log(`  ! earlier ${name} deployment did not confirm; sending a new one`);
   }
+  // Send directly and record the hash before anything else can fail. (Hardhat's
+  // sendDeploymentTransaction looks the tx up right after sending, and a public RPC
+  // that hasn't indexed it yet makes that throw — losing track of a sent deployment.)
+  const artifact = await hre.artifacts.readArtifact(name);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { deploymentTransaction } = await viem.sendDeploymentTransaction(name, args as any);
-  Object.assign(rec, { pendingTx: deploymentTransaction.hash, constructorArgs: args });
+  const hash = await wallets[0].deployContract({ abi: artifact.abi, bytecode: artifact.bytecode as Hex, args: args as any });
+  Object.assign(rec, { pendingTx: hash, constructorArgs: args });
   save();
-  const receipt = await confirm(deploymentTransaction.hash, `deploy ${name}`);
+  const receipt = await confirm(hash, `deploy ${name}`);
   Object.assign(rec, { address: receipt.contractAddress!, block: Number(receipt.blockNumber), pendingTx: undefined });
   save();
   console.log(`    at ${rec.address}`);
