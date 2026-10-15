@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Info, LoaderCircle, Wallet, ArrowRight, ChevronDown } from "lucide-react";
+import { Info, LoaderCircle, Wallet, ArrowRight, ChevronDown, CheckCircle2 } from "lucide-react";
 import { Panel } from "@/components/ui/Panel";
 import { Button } from "@/components/ui/Button";
 import { ProbabilitySlider } from "@/components/ui/ProbabilitySlider";
@@ -10,13 +10,15 @@ import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
 import { Countdown } from "@/components/ui/Countdown";
 import { StatusPill } from "@/components/ui/StatusPill";
 import { useWallet } from "@/providers/wallet-provider";
-import { stakingService } from "@/lib/web3/staking";
+import { useRound } from "@/providers/round-provider";
+import { usePayoutQuote } from "@/hooks/use-payout-quote";
+import { placeStake, type TxStage } from "@/lib/web3/staking";
+import { targetChain, txUrl } from "@/lib/web3/chain";
 import type { TxResult } from "@/lib/web3/types";
-import { estimatePayout } from "@/lib/scoring";
 import { formatEth } from "@/lib/format";
-import { NEUTRAL_ROOM, stakeLimits, stakePresets } from "@/data/rounds";
+import { stakePresets } from "@/data/rounds";
 import { marketCategories } from "@/data/markets";
-import { roundNumberAt } from "@/lib/round-clock";
+import { nextRoundClose } from "@/lib/round-clock";
 import { cn } from "@/lib/cn";
 import type { Market, PositionStatus, Round, RoundMarketState } from "@/lib/types";
 
@@ -31,6 +33,13 @@ export interface StakePanelProps {
   onYesChange: (yes: number) => void;
   onStakeChange: (eth: number) => void;
 }
+
+const STAGE_LABEL: Record<TxStage, string> = {
+  switching: "Checking network…",
+  checking: "Checking stake…",
+  wallet: "Confirm in your wallet…",
+  confirming: "Confirming on-chain…",
+};
 
 function Row({ label, children, strong }: { label: string; children: React.ReactNode; strong?: boolean }) {
   return (
@@ -55,9 +64,15 @@ export function StakePanel({
   onStakeChange,
 }: StakePanelProps) {
   const wallet = useWallet();
+  const { live, roundNo, params } = useRound();
   const [input, setInput] = useState(String(stakeEth));
-  const [submitting, setSubmitting] = useState(false);
+  const [stage, setStage] = useState<TxStage | null>(null);
   const [result, setResult] = useState<TxResult | null>(null);
+  const [sentHash, setSentHash] = useState<string | null>(null);
+  const submitting = stage !== null;
+  const limits = { min: params.minStakeEth, max: params.maxStakeEth };
+  const presets = stakePresets.filter((p) => p >= limits.min && p <= limits.max);
+  const cutoffMinutes = Math.ceil(params.entryCutoffSeconds / 60);
 
   // keep the text field in sync when stake changes elsewhere
   useEffect(() => {
@@ -69,19 +84,20 @@ export function StakePanel({
 
   const market = markets.find((m) => m.id === selectedId)!;
   const room = roundMarket.crowdYes;
-  const est = estimatePayout(yes, stakeEth, room ?? NEUTRAL_ROOM);
+  const est = usePayoutQuote(selectedId, yes, stakeEth, room);
   const balance = wallet.session?.balanceEth ?? null;
+  const marketClosed = market.kind !== "crypto" && market.marketState === "closed";
 
   const parsed = Number(input);
   let error: string | null = null;
   if (input.trim() === "" || !Number.isFinite(parsed)) error = "Enter a stake amount.";
-  else if (parsed < stakeLimits.min) error = `Minimum stake is ${stakeLimits.min} ETH.`;
-  else if (parsed > stakeLimits.max) error = `Maximum stake is ${stakeLimits.max} ETH.`;
+  else if (parsed < limits.min) error = `Minimum stake is ${limits.min} ETH.`;
+  else if (parsed > limits.max) error = `Maximum stake is ${limits.max} ETH.`;
   else if (balance !== null && parsed > balance) error = "Stake exceeds your wallet balance.";
 
   const status: PositionStatus = submitting
     ? "pending"
-    : result
+    : result && result.status !== "confirmed"
       ? "unavailable"
       : !wallet.isReady
         ? "awaiting-wallet"
@@ -94,21 +110,30 @@ export function StakePanel({
               : "closed";
 
   const onInput = (v: string) => {
-    if (!/^\d*\.?\d{0,6}$/.test(v)) return;
+    if (!/^d*.?d{0,6}$/.test(v)) return;
     setInput(v);
     const n = Number(v);
-    if (v !== "" && Number.isFinite(n) && n >= stakeLimits.min && n <= stakeLimits.max) onStakeChange(n);
+    if (v !== "" && Number.isFinite(n) && n >= limits.min && n <= limits.max) onStakeChange(n);
   };
 
   const place = async () => {
     if (!wallet.session || error) return;
-    setSubmitting(true);
     setResult(null);
+    setSentHash(null);
+    if (wallet.session.kind === "demo") {
+      setResult({ status: "unavailable", reason: "Demo mode — no transaction was sent. Connect a real wallet to stake." });
+      return;
+    }
+    if (!wallet.provider || !wallet.session.address || roundNo === null) return;
+    setStage("switching");
     try {
-      const r = await stakingService.enterRound(roundNumberAt(Date.now()), { marketId: selectedId, yes, stakeEth }, wallet.session);
+      const r = await placeStake(
+        { provider: wallet.provider, address: wallet.session.address, onStage: setStage, onSubmitted: setSentHash },
+        { round: roundNo, marketId: selectedId, yes, stakeEth },
+      );
       setResult(r);
     } finally {
-      setSubmitting(false);
+      setStage(null);
     }
   };
 
@@ -157,6 +182,12 @@ export function StakePanel({
           <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 size-4 -translate-y-1/2 text-muted" />
         </div>
         <p className="mt-3 text-[14px] text-fg-soft">{market.question}</p>
+        {live && marketClosed && (
+          <p className="mt-2 rounded-[9px] border border-gold/30 bg-gold-soft px-3 py-2 text-[12px] leading-relaxed text-fg-soft">
+            The US market for {market.symbol} is closed right now. If nothing trades around the hour, there is no price and
+            this round refunds every stake.
+          </p>
+        )}
 
         <div className="mt-5">
           <ProbabilitySlider yes={yes} onChange={onYesChange} crowdYes={room ?? undefined} />
@@ -192,7 +223,7 @@ export function StakePanel({
             <span className="num text-[14px] font-medium text-muted">ETH</span>
           </div>
           <div className="mt-2 grid grid-cols-5 gap-1.5">
-            {stakePresets.map((p) => (
+            {presets.map((p) => (
               <button
                 key={p}
                 type="button"
@@ -243,14 +274,21 @@ export function StakePanel({
         </div>
         <p className="mt-2 flex items-start gap-1.5 text-[11px] leading-relaxed text-muted">
           <Info className="mt-px size-3 shrink-0" />
-          {room !== null
-            ? `Estimate compares your call with the room's average (${room}% YES).`
-            : "Estimate compares your call with a neutral 50/50 room until live rounds open."}{" "}
+          {est.exact
+            ? "Exact payout from the contract if the round closed with the pool as it is now. It moves as others join."
+            : room !== null
+              ? `Estimate compares your call with the room's average (${room}% YES).`
+              : "Estimate compares your call with a neutral 50/50 room until live rounds open."}{" "}
           Not a guarantee — you can lose your stake.
         </p>
 
         <div className="mt-5 rounded-[11px] border border-line bg-panel-2/60 p-4">
-          <Countdown size="sm" settlementLabel={round.settlementLabel} />
+          <Countdown
+            size="sm"
+            label={live ? "Entries close in" : undefined}
+            getTarget={live ? (now) => nextRoundClose(now, cutoffMinutes) : undefined}
+            settlementLabel={round.settlementLabel}
+          />
         </div>
 
         {/* action */}
@@ -263,7 +301,7 @@ export function StakePanel({
             <Button size="lg" className="w-full" onClick={place} disabled={Boolean(error) || submitting || round.status === "closed" || round.status === "settling" || round.status === "settled"}>
               {submitting ? (
                 <>
-                  <LoaderCircle className="size-4 animate-spin" /> Preparing…
+                  <LoaderCircle className="size-4 animate-spin" /> {STAGE_LABEL[stage!]}
                 </>
               ) : (
                 <>
@@ -274,6 +312,26 @@ export function StakePanel({
           )}
 
           <AnimatePresence>
+            {result && result.status === "confirmed" && (
+              <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                role="status"
+                className="mt-3 flex items-start gap-2 rounded-[10px] border border-accent/30 bg-accent-soft px-3.5 py-3 text-[12.5px] leading-relaxed text-fg-soft"
+              >
+                <CheckCircle2 className="mt-px size-4 shrink-0 text-accent" />
+                <span>
+                  <span className="font-medium text-accent">Stake placed on {targetChain.name}. </span>
+                  It shows under Your entries below.{" "}
+                  {txUrl(result.hash) && (
+                    <a href={txUrl(result.hash)!} target="_blank" rel="noopener noreferrer" className="underline">
+                      View transaction
+                    </a>
+                  )}
+                </span>
+              </motion.div>
+            )}
             {result && result.status !== "submitted" && result.status !== "confirmed" && (
               <motion.div
                 initial={{ opacity: 0, y: -4 }}
@@ -282,8 +340,19 @@ export function StakePanel({
                 role="status"
                 className="mt-3 rounded-[10px] border border-gold/30 bg-gold-soft px-3.5 py-3 text-[12.5px] leading-relaxed text-fg-soft"
               >
-                <span className="font-medium text-gold">No transaction sent. </span>
+                <span className="font-medium text-gold">
+                  {sentHash ? "Transaction not confirmed. " : "No transaction sent. "}
+                </span>
                 {result.reason}
+                {sentHash && txUrl(sentHash) && (
+                  <>
+                    {" "}
+                    <a href={txUrl(sentHash)!} target="_blank" rel="noopener noreferrer" className="underline">
+                      Check it on the explorer
+                    </a>
+                    .
+                  </>
+                )}
               </motion.div>
             )}
           </AnimatePresence>

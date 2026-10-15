@@ -10,12 +10,13 @@ import { Countdown } from "@/components/ui/Countdown";
 import { PredictionCard } from "./PredictionCard";
 import { MarketRow } from "./MarketRow";
 import { StakePanel } from "./StakePanel";
+import { MyEntries } from "./MyEntries";
 import { useMarkets } from "@/providers/markets-provider";
-import { useRoundNumber } from "@/hooks/use-round-number";
-import { defaultCalls, getCurrentRound } from "@/data/rounds";
+import { useRound } from "@/providers/round-provider";
+import { defaultCalls } from "@/data/rounds";
+import { nextRoundClose } from "@/lib/round-clock";
 import { marketCategories } from "@/data/markets";
 import { formatEth, formatRoundId } from "@/lib/format";
-import { contractsLive } from "@/lib/web3/contracts";
 import { cn } from "@/lib/cn";
 import type { MarketCategory } from "@/lib/types";
 
@@ -24,9 +25,9 @@ type Calls = Record<string, { yes: number; stakeEth: number }>;
 const BOARD_ROWS = 12;
 
 export function LiveRound() {
-  const round = getCurrentRound();
+  const { live, round, roundNo, params } = useRound();
   const { markets, status: priceStatus, selectedId, select } = useMarkets();
-  const roundNo = useRoundNumber();
+  const cutoffMinutes = Math.ceil(params.entryCutoffSeconds / 60);
   const [calls, setCalls] = useState<Calls>(() => ({ ...defaultCalls }));
   const [adjusting, setAdjusting] = useState(false);
   const [query, setQuery] = useState("");
@@ -83,7 +84,11 @@ export function LiveRound() {
           aside={
             <div className="flex flex-wrap gap-2">
               <StatusPill status={priceStatus === "live" ? "api" : "pending"} label={priceStatus === "live" ? "Live prices" : "Connecting prices"} />
-              {!contractsLive && <StatusPill status="prelaunch" label="Staking opens at launch" />}
+              {live ? (
+                params.paused && <StatusPill status="closed" label="Entries paused" />
+              ) : (
+                <StatusPill status="prelaunch" label="Staking opens at launch" />
+              )}
             </div>
           }
         />
@@ -92,7 +97,12 @@ export function LiveRound() {
         <Reveal>
           <div className="mb-6 grid grid-cols-2 gap-px overflow-hidden rounded-[var(--radius-card)] border border-line bg-line md:grid-cols-[1.4fr_1fr_1fr_1fr]">
             <div className="col-span-2 bg-panel px-5 py-4 md:col-span-1">
-              <Countdown size="md" showProgress />
+              <Countdown
+                size="md"
+                showProgress
+                label={live ? "Entries close in" : undefined}
+                getTarget={live ? (now) => nextRoundClose(now, cutoffMinutes) : undefined}
+              />
             </div>
             {[
               ["Round", roundNo === null ? "#—" : formatRoundId(roundNo)],
@@ -218,6 +228,8 @@ export function LiveRound() {
             </Reveal>
           </div>
         </div>
+
+        {live && <MyEntries />}
       </div>
     </section>
   );
