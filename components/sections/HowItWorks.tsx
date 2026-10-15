@@ -60,8 +60,8 @@ export function HowItWorks() {
         <div className="mt-6 rounded-[var(--radius-card)] border border-line bg-panel px-5 py-5">
           <div className="flex items-center justify-between font-mono text-[11px] text-muted">
             <span>:00 Round opens</span>
-            <span className="hidden sm:inline">Entries open all hour</span>
-            <span>:60 Close → settle</span>
+            <span className="hidden sm:inline">Entries close just before the hour</span>
+            <span>Next :00 Lock → settle</span>
           </div>
           <div className="relative mt-3 h-1.5 overflow-hidden rounded-full bg-panel-2">
             <motion.div

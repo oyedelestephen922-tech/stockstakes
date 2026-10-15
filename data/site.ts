@@ -12,7 +12,7 @@ export const site = {
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://stockstakes.fun",
   social: {
     // Set these when the accounts exist. Null links render as "coming soon".
-    x: null as string | null,
+    x: "https://x.com/StockStakes" as string | null,
     telegram: null as string | null,
   },
 };
