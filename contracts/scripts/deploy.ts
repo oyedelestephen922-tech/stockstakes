@@ -17,6 +17,7 @@ import { verifyContract } from "@nomicfoundation/hardhat-verify/verify";
 import { createInterface } from "node:readline/promises";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { getAddress, isAddress, parseAbi, parseEther, type Address, type Hash, type Hex } from "viem";
+import { privateKeyToAddress } from "viem/accounts";
 import { boardMarkets } from "../config/markets.ts";
 import { chainlinkFeeds } from "../config/chainlink.ts";
 import { params } from "../config/params.ts";
@@ -63,14 +64,30 @@ function addressFromEnv(name: string, fallback: Address | undefined): Address {
   const v = process.env[name]?.trim();
   if (!v) {
     if (fallback) return fallback;
-    throw new Error(`${name} is not set. Add it to contracts/.env (see .env.example).`);
+    throw new Error(`${name} is not set. Add it (or KEEPER_PRIVATE_KEY for the keeper) to contracts/.env.`);
   }
   if (!isAddress(v)) throw new Error(`${name} is not a valid address: ${v}`);
   return getAddress(v);
 }
 
 const owner = addressFromEnv("OWNER_ADDRESS", deployer);
-const keeper = addressFromEnv("KEEPER_ADDRESS", simulated && wallets[1] ? getAddress(wallets[1].account.address) : undefined);
+function keeperFromKey(): Address | undefined {
+  const k = process.env.KEEPER_PRIVATE_KEY?.trim();
+  if (!k) return undefined;
+  try {
+    return privateKeyToAddress((k.startsWith("0x") ? k : `0x${k}`) as Hex);
+  } catch {
+    throw new Error("KEEPER_PRIVATE_KEY in contracts/.env is not a valid private key.");
+  }
+}
+const keeperKeyAddress = simulated ? undefined : keeperFromKey();
+const keeper = addressFromEnv(
+  "KEEPER_ADDRESS",
+  keeperKeyAddress ?? (simulated && wallets[1] ? getAddress(wallets[1].account.address) : undefined),
+);
+if (keeperKeyAddress && keeper !== keeperKeyAddress) {
+  throw new Error(`KEEPER_ADDRESS (${keeper}) does not match KEEPER_PRIVATE_KEY (${keeperKeyAddress}). Fix one of them in contracts/.env.`);
+}
 const guardian = addressFromEnv("GUARDIAN_ADDRESS", deployer);
 if (!simulated && keeper === deployer) {
   throw new Error("KEEPER_ADDRESS must be a separate wallet from the deployer (its key goes into GitHub).");

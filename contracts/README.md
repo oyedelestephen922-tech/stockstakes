@@ -52,8 +52,10 @@ Fill in and save:
 
 ```
 DEPLOYER_PRIVATE_KEY=0x...your deployer wallet's private key...
-KEEPER_ADDRESS=0x...your keeper wallet's ADDRESS (not its key)...
+KEEPER_PRIVATE_KEY=0x...your keeper wallet's private key...
 ```
+
+`KEEPER_ADDRESS` is optional — the deploy works it out from `KEEPER_PRIVATE_KEY` (if you fill in both, they must match). With the keeper key here you can also post prices from your PC with `npm run keeper`.
 
 Optional: `GUARDIAN_ADDRESS`, `OWNER_ADDRESS` (default to the deployer), and `ROBINHOOD_RPC_URL` (a private RPC such as Alchemy is more reliable than the public one). `.env` is git-ignored — it never leaves your PC.
 

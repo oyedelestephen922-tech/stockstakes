@@ -18,6 +18,13 @@ import { boardMarkets } from "../config/markets.ts";
 import { createPriceSource } from "./prices.ts";
 import { runKeeper } from "./keeper.ts";
 
+// Local runs read contracts/.env; on GitHub the values come from repository secrets.
+try {
+  process.loadEnvFile(new URL("../.env", import.meta.url));
+} catch {
+  // no .env file — fine
+}
+
 const LOW_BALANCE = 2_000_000_000_000_000n; // 0.002 ETH
 
 const chainId = Number(process.env.CHAIN_ID || 4663);
@@ -30,7 +37,7 @@ if (!deployment) {
 }
 
 const dryRun = process.env.DRY_RUN === "1";
-const transport = http(process.env.RPC_URL || undefined, { retryCount: 3, retryDelay: 1000 });
+const transport = http(process.env.RPC_URL || process.env.ROBINHOOD_RPC_URL || undefined, { retryCount: 3, retryDelay: 1000 });
 const publicClient = createPublicClient({ chain, transport }) as PublicClient;
 
 const key = process.env.KEEPER_PRIVATE_KEY?.trim();
