@@ -32,7 +32,22 @@
       93600
     ]
   },
-  "StakesRounds": {},
-  "updatedAt": "2026-10-15T19:58:52.993Z",
+  "StakesRounds": {
+    "constructorArgs": [
+      "0xb7265AE3942E645F77ec0808d15632138C0995Dd",
+      "0x6f28AB061F120AC07e88F9DF00072F0895440504",
+      300,
+      60,
+      {
+        "$bigint": "1000000000000000"
+      },
+      {
+        "$bigint": "100000000000000000"
+      }
+    ],
+    "address": "0xb38724290beeafabab1aaa0611f87ae8ccf8b805",
+    "block": 89216287
+  },
+  "updatedAt": "2026-10-15T20:11:44.775Z",
   "note": "StakesOracle recorded by hand from tx 0x284c9265ddecc7036778ac96a4f26449b8dbe0ede62a4463628c6d2b4084739c after the first run lost track of it"
 }

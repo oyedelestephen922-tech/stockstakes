@@ -10,4 +10,10 @@ export interface Deployment {
 }
 
 export const deployments: Record<number, Deployment> = {
+  4663: {
+    chainId: 4663,
+    stakesRounds: "0xb38724290beeafabab1aaa0611f87ae8ccf8b805",
+    stakesOracle: "0x6f28AB061F120AC07e88F9DF00072F0895440504",
+    deployBlock: 89216287,
+  },
 };
