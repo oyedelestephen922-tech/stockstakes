@@ -212,7 +212,7 @@ stopIfAsked("rounds");
 
 const oracle = await viem.getContractAt("StakesOracle", oracleAddress);
 const rounds = await viem.getContractAt("StakesRounds", roundsAddress);
-const ownerIsDeployer = getAddress((await oracle.read.owner()) as Address) === deployer;
+const ownerIsDeployer = getAddress(await oracle.read.owner()) === deployer;
 
 // ------------------------------------------------------------------ 2. Chainlink feeds
 console.log("2/4 Chainlink sanity-check feeds");
@@ -223,7 +223,7 @@ const wantFeeds = Object.entries(chainlinkFeeds[chainId] ?? {}).flatMap(([symbol
 });
 const feedTodo: { key: Hex; feed: Address }[] = [];
 await mapLimit(wantFeeds, 10, async ({ symbol, key, feed }) => {
-  const [current] = (await oracle.read.feeds([key])) as readonly [Address, number];
+  const [current] = await oracle.read.feeds([key]);
   if (getAddress(current) === feed) return;
   const desc = await publicClient.readContract({ address: feed, abi: feedAbi, functionName: "description" }).catch(() => null);
   if (!desc || !desc.toUpperCase().includes(symbol)) {
