@@ -10,7 +10,7 @@ try {
 
 const MAINNET_RPC = process.env.ROBINHOOD_RPC_URL || "https://rpc.mainnet.chain.robinhood.com";
 const TESTNET_RPC = process.env.ROBINHOOD_TESTNET_RPC_URL || "https://rpc.testnet.chain.robinhood.com";
-const MAINNET_EXPLORER = process.env.ROBINHOOD_EXPLORER_URL || "https://explorer.mainnet.chain.robinhood.com";
+const MAINNET_EXPLORER = process.env.ROBINHOOD_EXPLORER_URL || "https://robinhoodchain.blockscout.com";
 const TESTNET_EXPLORER = "https://explorer.testnet.chain.robinhood.com";
 
 export default defineConfig({

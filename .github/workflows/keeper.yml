@@ -1,0 +1,53 @@
+# Posts StockStakes' hourly prices on-chain (contracts/keeper/run.ts).
+#
+# Setup (GitHub → Settings → Secrets and variables → Actions):
+#   Secret   KEEPER_PRIVATE_KEY   private key of the keeper wallet (fund it with ~0.01 ETH)
+#   Secret   RPC_URL              optional private RPC (e.g. Alchemy) — more reliable than the public one
+#   Variable CHAIN_ID             optional; 4663 (mainnet, default) or 46630 (testnet)
+#
+# Schedules only run on the default branch (main). GitHub often starts them a few
+# minutes late; that's fine — the keeper back-fills any hour still within the 6h deadline.
+name: Keeper
+
+on:
+  schedule:
+    - cron: "4 * * * *" # every hour at :04
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run: fetch prices and report, send no transactions"
+        type: boolean
+        default: false
+
+concurrency:
+  group: keeper
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  post-prices:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: contracts/package-lock.json
+
+      - name: Install
+        working-directory: contracts
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Post prices
+        working-directory: contracts
+        run: node keeper/run.ts
+        env:
+          KEEPER_PRIVATE_KEY: ${{ secrets.KEEPER_PRIVATE_KEY }}
+          RPC_URL: ${{ secrets.RPC_URL }}
+          CHAIN_ID: ${{ vars.CHAIN_ID || '4663' }}
+          DRY_RUN: ${{ inputs.dry_run && '1' || '' }}

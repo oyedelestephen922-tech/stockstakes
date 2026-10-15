@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { connectInjected, getInjectedProvider, readBalanceEth, readChainId } from "@/lib/web3/injected";
 import { useDiscoveredWallets, type DiscoveredWallet } from "@/lib/web3/eip6963";
 import { isMobileDevice, walletOptions, type LegacyFlags, type WalletOption } from "@/lib/web3/wallets";
+import { TX_EVENT } from "@/lib/web3/client";
 import type { Eip1193Provider, WalletSession, WalletStatus } from "@/lib/web3/types";
 
 /** A wallet the dialog can show, with its provider if it is available here. */
@@ -36,6 +37,8 @@ interface WalletContextValue {
   startDemo: () => void;
   disconnect: () => void;
   isReady: boolean; // connected or demo
+  /** The connected wallet's provider (null in demo mode or when disconnected). Used to send transactions. */
+  provider: Eip1193Provider | null;
 }
 
 const WalletContext = createContext<WalletContextValue | null>(null);
@@ -152,6 +155,19 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     setError(null);
   }, []);
 
+  // Refresh the balance after a confirmed stake or claim.
+  useEffect(() => {
+    const provider = activeProvider;
+    const address = session?.kind === "injected" ? session.address : null;
+    if (!provider || !address) return;
+    const onTx = async () => {
+      const balanceEth = await readBalanceEth(provider, address);
+      setSession((s) => (s && s.address === address ? { ...s, balanceEth } : s));
+    };
+    window.addEventListener(TX_EVENT, onTx);
+    return () => window.removeEventListener(TX_EVENT, onTx);
+  }, [activeProvider, session?.kind, session?.address]);
+
   // Keep a real session in sync with the wallet that was used.
   useEffect(() => {
     const provider = activeProvider;
@@ -204,8 +220,9 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       startDemo,
       disconnect,
       isReady: status === "connected" || status === "demo",
+      provider: activeProvider,
     }),
-    [status, session, walletName, error, isMobile, featured, others, hasAnyProvider, dialogOpen, connectingKey, connectWith, startDemo, disconnect],
+    [status, session, walletName, error, isMobile, featured, others, hasAnyProvider, dialogOpen, connectingKey, connectWith, startDemo, disconnect, activeProvider],
   );
 
   return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>;

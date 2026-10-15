@@ -17,6 +17,7 @@ import { verifyContract } from "@nomicfoundation/hardhat-verify/verify";
 import { createInterface } from "node:readline/promises";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { getAddress, isAddress, parseAbi, parseEther, type Address, type Hash, type Hex } from "viem";
+import { privateKeyToAddress } from "viem/accounts";
 import { boardMarkets } from "../config/markets.ts";
 import { chainlinkFeeds } from "../config/chainlink.ts";
 import { params } from "../config/params.ts";
@@ -63,14 +64,30 @@ function addressFromEnv(name: string, fallback: Address | undefined): Address {
   const v = process.env[name]?.trim();
   if (!v) {
     if (fallback) return fallback;
-    throw new Error(`${name} is not set. Add it to contracts/.env (see .env.example).`);
+    throw new Error(`${name} is not set. Add it (or KEEPER_PRIVATE_KEY for the keeper) to contracts/.env.`);
   }
   if (!isAddress(v)) throw new Error(`${name} is not a valid address: ${v}`);
   return getAddress(v);
 }
 
 const owner = addressFromEnv("OWNER_ADDRESS", deployer);
-const keeper = addressFromEnv("KEEPER_ADDRESS", simulated && wallets[1] ? getAddress(wallets[1].account.address) : undefined);
+function keeperFromKey(): Address | undefined {
+  const k = process.env.KEEPER_PRIVATE_KEY?.trim();
+  if (!k) return undefined;
+  try {
+    return privateKeyToAddress((k.startsWith("0x") ? k : `0x${k}`) as Hex);
+  } catch {
+    throw new Error("KEEPER_PRIVATE_KEY in contracts/.env is not a valid private key.");
+  }
+}
+const keeperKeyAddress = simulated ? undefined : keeperFromKey();
+const keeper = addressFromEnv(
+  "KEEPER_ADDRESS",
+  keeperKeyAddress ?? (simulated && wallets[1] ? getAddress(wallets[1].account.address) : undefined),
+);
+if (keeperKeyAddress && keeper !== keeperKeyAddress) {
+  throw new Error(`KEEPER_ADDRESS (${keeper}) does not match KEEPER_PRIVATE_KEY (${keeperKeyAddress}). Fix one of them in contracts/.env.`);
+}
 const guardian = addressFromEnv("GUARDIAN_ADDRESS", deployer);
 if (!simulated && keeper === deployer) {
   throw new Error("KEEPER_ADDRESS must be a separate wallet from the deployer (its key goes into GitHub).");
@@ -162,11 +179,15 @@ async function ensureDeployed(name: "StakesOracle" | "StakesRounds", args: unkno
     }
     console.log(`  ! earlier ${name} deployment did not confirm; sending a new one`);
   }
+  // Send directly and record the hash before anything else can fail. (Hardhat's
+  // sendDeploymentTransaction looks the tx up right after sending, and a public RPC
+  // that hasn't indexed it yet makes that throw — losing track of a sent deployment.)
+  const artifact = await hre.artifacts.readArtifact(name);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { deploymentTransaction } = await viem.sendDeploymentTransaction(name, args as any);
-  Object.assign(rec, { pendingTx: deploymentTransaction.hash, constructorArgs: args });
+  const hash = await wallets[0].deployContract({ abi: artifact.abi, bytecode: artifact.bytecode as Hex, args: args as any });
+  Object.assign(rec, { pendingTx: hash, constructorArgs: args });
   save();
-  const receipt = await confirm(deploymentTransaction.hash, `deploy ${name}`);
+  const receipt = await confirm(hash, `deploy ${name}`);
   Object.assign(rec, { address: receipt.contractAddress!, block: Number(receipt.blockNumber), pendingTx: undefined });
   save();
   console.log(`    at ${rec.address}`);
@@ -212,7 +233,7 @@ stopIfAsked("rounds");
 
 const oracle = await viem.getContractAt("StakesOracle", oracleAddress);
 const rounds = await viem.getContractAt("StakesRounds", roundsAddress);
-const ownerIsDeployer = getAddress((await oracle.read.owner()) as Address) === deployer;
+const ownerIsDeployer = getAddress(await oracle.read.owner()) === deployer;
 
 // ------------------------------------------------------------------ 2. Chainlink feeds
 console.log("2/4 Chainlink sanity-check feeds");
@@ -223,7 +244,7 @@ const wantFeeds = Object.entries(chainlinkFeeds[chainId] ?? {}).flatMap(([symbol
 });
 const feedTodo: { key: Hex; feed: Address }[] = [];
 await mapLimit(wantFeeds, 10, async ({ symbol, key, feed }) => {
-  const [current] = (await oracle.read.feeds([key])) as readonly [Address, number];
+  const [current] = await oracle.read.feeds([key]);
   if (getAddress(current) === feed) return;
   const desc = await publicClient.readContract({ address: feed, abi: feedAbi, functionName: "description" }).catch(() => null);
   if (!desc || !desc.toUpperCase().includes(symbol)) {

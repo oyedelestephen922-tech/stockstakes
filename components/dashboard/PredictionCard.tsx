@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/Button";
 import { ProbabilityBar } from "@/components/ui/ProbabilityBar";
 import { ProbabilitySlider } from "@/components/ui/ProbabilitySlider";
 import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
-import { estimatePayout } from "@/lib/scoring";
+import { usePayoutQuote } from "@/hooks/use-payout-quote";
+import { useRound } from "@/providers/round-provider";
 import { formatEth } from "@/lib/format";
 import { MarketPrice, MarketStateTag } from "@/components/ui/MarketPrice";
-import { NEUTRAL_ROOM } from "@/data/rounds";
 import { cn } from "@/lib/cn";
 import type { Market, RoundMarketState } from "@/lib/types";
 
@@ -40,7 +40,8 @@ export function PredictionCard({
   const no = 100 - yes;
   const side = yes >= 50 ? "YES" : "NO";
   const room = roundMarket.crowdYes;
-  const est = estimatePayout(yes, stakeEth, room ?? NEUTRAL_ROOM);
+  const est = usePayoutQuote(market.id, yes, stakeEth, room);
+  const { live } = useRound();
 
   // Choosing a side mirrors the probability so your conviction carries over.
   const pickSide = (s: "YES" | "NO") => {
@@ -127,7 +128,7 @@ export function PredictionCard({
                 <span className="size-1.5 rotate-45 bg-gold" /> Room {room}/{100 - room}
               </span>
             ) : (
-              <span>Room odds open at launch</span>
+              <span>{live ? "No calls yet — be the first" : "Room odds open at launch"}</span>
             )}
           </div>
         </div>
@@ -142,7 +143,7 @@ export function PredictionCard({
               valueClassName="text-fg-soft"
             />
             <div className="col-span-2">
-              <span className="label block">Estimated reward · if {side}</span>
+              <span className="label block">{est.exact ? "Payout" : "Estimated reward"} · if {side}</span>
               <div className="mt-1 flex items-baseline gap-2">
                 <AnimatedNumber
                   value={est.favoured}
@@ -152,7 +153,8 @@ export function PredictionCard({
                 <span className="num text-[12px] text-muted">ETH</span>
               </div>
               <span className="num mt-0.5 block text-[11px] text-muted">
-                if {side === "YES" ? "NO" : "YES"}: {formatEth(side === "YES" ? est.ifNo : est.ifYes, 4)} ETH · vs {room !== null ? "the room" : "a 50/50 room"}
+                if {side === "YES" ? "NO" : "YES"}: {formatEth(side === "YES" ? est.ifNo : est.ifYes, 4)} ETH ·{" "}
+                {est.exact ? "pool as it stands" : room !== null ? "vs the room" : "vs a 50/50 room"}
               </span>
             </div>
           </div>

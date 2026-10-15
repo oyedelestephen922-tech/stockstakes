@@ -10,11 +10,26 @@ import { StatusPill } from "@/components/ui/StatusPill";
 import { Button } from "@/components/ui/Button";
 import { MarketPrice, MarketStateTag, hasPriceHistory } from "@/components/ui/MarketPrice";
 import { useMarkets } from "@/providers/markets-provider";
+import { useRound } from "@/providers/round-provider";
+import { formatEth } from "@/lib/format";
 import { marketCategories } from "@/data/markets";
 import { cn } from "@/lib/cn";
 import type { Market, MarketCategory } from "@/lib/types";
 
 const INITIAL = 6;
+
+/** The room's average call and pool for this round, from the contract once live. */
+function RoomOdds({ marketId }: { marketId: string }) {
+  const { live, round } = useRound();
+  const rm = round.markets.find((m) => m.marketId === marketId);
+  if (!live) return <span className="num text-[11.5px] text-muted">Room odds at launch</span>;
+  if (!rm || rm.crowdYes === null) return <span className="num text-[11.5px] text-muted">No calls yet this round</span>;
+  return (
+    <span className="num text-[11.5px] text-muted">
+      Room <span className="text-fg-soft">{rm.crowdYes}% YES</span> · {formatEth(rm.poolEth ?? 0, 3)} ETH
+    </span>
+  );
+}
 const STEP = 12;
 
 function MarketCard({
@@ -69,7 +84,7 @@ function MarketCard({
       <p className="mt-4 flex-1 text-[15px] font-medium leading-snug tracking-[-0.01em] text-fg">{market.question}</p>
 
       <div className="mt-4 flex items-center justify-between border-t border-line pt-3.5">
-        <span className="num text-[11.5px] text-muted">Room odds at launch</span>
+        <RoomOdds marketId={market.id} />
         <button
           type="button"
           onClick={onCall}

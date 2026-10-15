@@ -31,9 +31,3 @@ export type TxResult =
   | { status: "confirmed"; hash: string; blockNumber: number }
   | { status: "failed"; reason: string; hash?: string };
 
-/** Contract-facing service. Implement with viem/wagmi once contracts are live. */
-export interface StakingService {
-  readonly live: boolean;
-  enterRound(roundId: number, draft: CallDraft, session: WalletSession): Promise<TxResult>;
-  claim(roundId: number, session: WalletSession): Promise<TxResult>;
-}

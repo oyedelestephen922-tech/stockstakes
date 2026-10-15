@@ -33,17 +33,18 @@ components/
   ui/                Panel, Button, ProbabilitySlider, ProbabilityBar, Countdown, Sparkline, …
 data/                market list, round config and site copy
   markets.ts         the market list (one line per market) + price-feed symbols
-  rounds.ts          round config (pools/room odds stay empty until contracts are live)
+  rounds.ts          pre-launch round config and stake presets
   token.ts           $STAKES info — contractAddress is null (CA Coming Soon)
   site.ts            nav, hero copy, steps, thesis, safety copy
   legal.ts           /rules and /safety page content
 lib/
   prices.ts          live price feed (Coinbase, Yahoo Finance, optional Finnhub)
-  scoring.ts         illustrative Brier-score payout estimate
+  scoring.ts         illustrative payout estimate (used only before launch)
   round-clock.ts     hourly close time
-  web3/              wallet list + deep links, EIP-6963 discovery, staking interface
-providers/           theme, wallet and live-markets context
-hooks/               useCountdown
+  web3/              chain + contract config, staking/claim transactions, wallet list, EIP-6963
+providers/           theme, wallet, live-markets and live-round context
+contracts/           Solidity contracts, tests, deploy script, price keeper (see its README)
+hooks/               useCountdown, usePayoutQuote, useMyEntries
 ```
 
 ## Live data
@@ -66,14 +67,13 @@ Round pools, entries and the room's odds come from the round contract, so they r
 
 For the most reliable stock prices, create a free key at finnhub.io and add `FINNHUB_API_KEY` in Vercel → Settings → Environment Variables.
 
-## Connecting the contracts later
+## Contracts
 
-| Replace | With |
-|---|---|
-| `getCurrentRound()` in `data/rounds.ts` | round contract reads / indexer (pools, entries, room odds) |
-| `estimatePayout()` in `lib/scoring.ts` | the contract's real payout math |
-| `stakingService` in `lib/web3/staking.ts` | real contract writes (e.g. viem `writeContract` + receipt) |
-| `token.contractAddress` in `data/token.ts` | the real CA once live — every "Coming soon" updates automatically |
+Staking runs on two contracts on Robinhood Chain — `StakesRounds` (stakes, payouts, claims) and `StakesOracle` (hourly prices posted by a keeper on GitHub Actions). They live in [`contracts/`](contracts/), with tests, the deploy script and the keeper.
+
+**To deploy, follow [contracts/README.md](contracts/README.md)** — step by step for Windows Command Prompt.
+
+Until the deploy script has written `lib/web3/deployment.ts`, the site stays in pre-launch mode ("Opens at launch", no transactions). After deployment it reads pools and odds from the chain, places real stakes, quotes exact payouts, and lists your entries with Claim buttons.
 
 ## Wallet behaviour
 
@@ -81,7 +81,7 @@ For the most reliable stock prices, create a free key at finnhub.io and add `FIN
 - **On phones**, tapping a wallet opens StockStakes inside that wallet app's browser (official deep links), where it connects normally. This needs a public URL — test it on your Vercel deployment, not `localhost`.
 - On desktop, a wallet that isn't installed links to its download page.
 - Users can also **Preview in demo mode** — clearly labelled, no address, no funds.
-- **Place Stake** never fakes a transaction. Until contracts are live it returns "No transaction sent" with the reason.
+- **Place Stake** never fakes a transaction: it switches the wallet to Robinhood Chain, checks the stake against the contract first, and shows success only from a confirmed receipt. Before launch it returns "No transaction sent" with the reason.
 
 ## Environment variables (optional)
 
@@ -89,12 +89,13 @@ Copy `.env.example` to `.env.local`:
 
 ```
 NEXT_PUBLIC_SITE_URL=https://your-domain.com
-NEXT_PUBLIC_ROUND_MANAGER_ADDRESS=
+NEXT_PUBLIC_CHAIN_ID=            # 4663 (default) = Robinhood Chain mainnet
+NEXT_PUBLIC_RPC_URL=             # optional private RPC for reads
 NEXT_PUBLIC_STAKES_TOKEN_ADDRESS=
-NEXT_PUBLIC_CHAIN_ID=
+FINNHUB_API_KEY=
 ```
 
-Leave addresses empty until deployed. Social links (X, Telegram) are set in `data/site.ts` and show "Soon" until filled in.
+Contract addresses are not env vars — they come from `lib/web3/deployment.ts`, written by the deploy script. Social links (X, Telegram) are set in `data/site.ts` and show "Soon" until filled in.
 
 ## Brand assets
 

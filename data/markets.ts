@@ -149,7 +149,7 @@ export const markets: Market[] = defs.map((d, i) => ({
   history: [],
   marketState: null,
   feed: d.feed,
-  question: `Will ${d.short ?? d.name} finish higher this hour?`,
+  question: `Will ${d.short ?? d.name} finish higher next hour?`,
   source: "api",
 }));
 
