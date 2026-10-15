@@ -16,7 +16,11 @@
     "build": "hardhat build",
     "test": "hardhat test",
     "test:sol": "hardhat test solidity",
-    "test:ts": "hardhat test nodejs",
-    "typecheck": "hardhat build && tsc --noEmit"
+    "typecheck": "hardhat build && tsc --noEmit",
+    "deploy": "hardhat run --build-profile production scripts/deploy.ts --network robinhood",
+    "deploy:testnet": "hardhat run --build-profile production scripts/deploy.ts --network robinhoodTestnet",
+    "export:site": "node scripts/export-site.ts",
+    "fork:node": "hardhat node --network robinhoodFork",
+    "deploy:local": "hardhat run scripts/deploy.ts --network localhost"
   }
 }

@@ -1,11 +1,16 @@
 {
   "compilerOptions": {
     "lib": ["es2023"],
-    "module": "node20",
+    "module": "esnext",
+    "moduleResolution": "bundler",
     "target": "es2023",
     "skipLibCheck": true,
-    "outDir": "dist",
+    "strict": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
     "types": ["node"],
-    "verbatimModuleSyntax": true
-  }
+    "verbatimModuleSyntax": true,
+    "paths": { "@/*": ["../*"] }
+  },
+  "include": ["hardhat.config.ts", "config/**/*.ts", "scripts/**/*.ts", "test/**/*.ts", "keeper/**/*.ts", "types/**/*.ts"]
 }

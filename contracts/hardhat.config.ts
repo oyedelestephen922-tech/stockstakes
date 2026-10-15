@@ -54,6 +54,12 @@ export default defineConfig({
       chainId: 4663,
       forking: { url: MAINNET_RPC },
     },
+    // A node started with `npm run fork:node` (or a plain `npx hardhat node`).
+    localhost: {
+      type: "http",
+      chainType: "generic",
+      url: "http://127.0.0.1:8545",
+    },
     robinhood: {
       type: "http",
       chainType: "generic",
